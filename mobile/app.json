@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "JobPortal",
+    "slug": "job-portal",
+    "version": "1.0.0",
+    "scheme": "jobportal",
+    "orientation": "portrait",
+    "newArchEnabled": false,
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "android": {
+      "package": "com.jobportal.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1a73e8"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.jobportal.app"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
