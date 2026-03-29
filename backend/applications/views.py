@@ -1,5 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+from django.db import IntegrityError
 from .models import Application
 from .serializers import ApplicationSerializer, ApplicationStatusSerializer
 from jobs.models import Job
@@ -10,14 +12,19 @@ class ApplyJobView(generics.CreateAPIView):
     serializer_class = ApplicationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         job_id = serializer.validated_data.get('job_id')
         try:
-            job = Job.objects.get(pk=job_id, status='published')
+            Job.objects.get(pk=job_id, status='published')
         except Job.DoesNotExist:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError({'job_id': 'This job is not available for applications.'})
-        serializer.save(applicant=self.request.user)
+        # Check duplicate before hitting the DB constraint
+        if Application.objects.filter(job_id=job_id, applicant=request.user).exists():
+            raise ValidationError({'detail': 'You have already applied to this job.'})
+        serializer.save(applicant=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MyApplicationsView(generics.ListAPIView):
