@@ -212,7 +212,7 @@ export default function RegisterScreen() {
   const [empTypeOther, setEmpTypeOther] = useState('');
 
   const [form, setForm] = useState({
-    username: '', email: '', password: '', phone: '', location: '', organization_name: '',
+    username: '', email: '', password: '', confirmPassword: '', phone: '', location: '', organization_name: '',
   });
   const [files, setFiles]   = useState<Record<string, any>>({});
   const [nationalIdNo, setNationalIdNo] = useState('');
@@ -229,7 +229,9 @@ export default function RegisterScreen() {
   const validateBasic = () => {
     if (!form.username.trim()) return 'Username is required.';
     if (!form.email.trim()) return 'Email is required.';
-    if (!form.password.trim() || form.password.length < 6) return 'Password must be at least 6 characters.';
+    if (!form.password.trim() || form.password.length < 8) return 'Password must be at least 8 characters.';
+    if (!form.confirmPassword.trim()) return 'Please confirm your password.';
+    if (form.password !== form.confirmPassword) return 'Passwords do not match.';
     if (!form.phone.trim()) return 'Phone number is required.';
     return '';
   };
@@ -240,7 +242,9 @@ export default function RegisterScreen() {
     const required = selectedType?.docs || [];
     for (const d of required) {
       if (d === 'national_id_number') {
-        if (!nationalIdNo.trim()) return 'National ID number is required.';
+        const digits = nationalIdNo.replace(/\s/g, '');
+        if (!digits.trim()) return 'National ID number is required.';
+        if (digits.length !== 16) return 'National ID number must be exactly 16 digits.';
       } else if (!files[d]) {
         return `${DOC_META[d]?.label} is required.`;
       }
@@ -250,8 +254,10 @@ export default function RegisterScreen() {
 
   // ── Submit ──
   const handleSubmit = async () => {
-    const docErr = validateDocs();
-    if (docErr) { setError(docErr); return; }
+    if (role === 'employer') {
+      const docErr = validateDocs();
+      if (docErr) { setError(docErr); return; }
+    }
 
     setLoading(true);
     setError('');
@@ -268,7 +274,7 @@ export default function RegisterScreen() {
         fd.append('employer_type', empType);
         fd.append('employer_type_other', empTypeOther.trim());
         fd.append('organization_name', form.organization_name.trim());
-        fd.append('national_id_number', nationalIdNo.trim());
+        fd.append('national_id_number', nationalIdNo.replace(/\s/g, '').trim());
         for (const [k, f] of Object.entries(files)) {
           if (!f) continue;
           if (f.file) {
@@ -324,14 +330,14 @@ export default function RegisterScreen() {
   if (step === 'role') {
     return (
       <View style={s.page}>
-        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-          <View style={s.topBanner}>
-            <View style={s.logoWrap}><Ionicons name="briefcase" size={32} color="#fff" /></View>
+        <ScrollView contentContainerStyle={s.scrollCenter} keyboardShouldPersistTaps="handled">
+          <View style={s.card}>
+            <View style={s.logoWrap}>
+              <Ionicons name="briefcase" size={32} color={C.primary} />
+            </View>
             <Text style={s.appName}>JobPortal</Text>
             <Text style={s.tagline}>Create your account</Text>
-          </View>
 
-          <View style={s.card}>
             <Text style={s.cardTitle}>I want to join as</Text>
             <Text style={s.cardSub}>Choose your account type to get started</Text>
 
@@ -409,8 +415,10 @@ export default function RegisterScreen() {
               onChange={(v: string) => set('username', v)} props={{ autoCapitalize: 'none', autoCorrect: false }} />
             <InputRow icon="mail-outline" placeholder="Email *" value={form.email}
               onChange={(v: string) => set('email', v)} props={{ keyboardType: 'email-address', autoCapitalize: 'none' }} />
-            <InputRow icon="lock-closed-outline" placeholder="Password * (min 6 chars)" value={form.password}
+            <InputRow icon="lock-closed-outline" placeholder="Password * (min 8 chars)" value={form.password}
               onChange={(v: string) => set('password', v)} props={{ secureTextEntry: true }} />
+            <InputRow icon="lock-closed-outline" placeholder="Confirm Password *" value={form.confirmPassword}
+              onChange={(v: string) => set('confirmPassword', v)} props={{ secureTextEntry: true }} />
             <InputRow icon="call-outline" placeholder="Phone Number *" value={form.phone}
               onChange={(v: string) => set('phone', v)} props={{ keyboardType: 'phone-pad' }} />
             <InputRow icon="location-outline" placeholder="Location (e.g. Addis Ababa)" value={form.location}
@@ -534,11 +542,18 @@ export default function RegisterScreen() {
               return (
                 <View key="national_id_number" style={s.uploadWrap}>
                   <Text style={s.uploadLabel}>National ID Number <Text style={{ color: C.danger }}>*</Text></Text>
-                  <Text style={s.uploadHint}>Enter the ID number printed on your national ID card</Text>
+                  <Text style={s.uploadHint}>Enter your 16-digit FAN number (e.g. 1234 5678 9012 3456)</Text>
                   <View style={s.inputWrap}>
                     <Ionicons name="card-outline" size={18} color={C.textSub} style={s.inputIcon} />
-                    <TextInput style={s.input} placeholder="e.g. ETH-1234567890"
-                      value={nationalIdNo} onChangeText={setNationalIdNo}
+                    <TextInput style={s.input} placeholder="e.g. 1234 5678 9012 3456"
+                      value={nationalIdNo}
+                      onChangeText={v => {
+                        // Keep only digits, max 16
+                        const digits = v.replace(/\D/g, '').slice(0, 16);
+                        // Format as groups of 4: XXXX XXXX XXXX XXXX
+                        const formatted = digits.replace(/(.{4})/g, '$1 ').trim();
+                        setNationalIdNo(formatted);
+                      }}
                       placeholderTextColor={C.textSub} autoCapitalize="characters" />
                   </View>
                 </View>
@@ -571,12 +586,13 @@ export default function RegisterScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   page:       { flex: 1, backgroundColor: C.bg },
-  scroll:     { paddingBottom: 48 },
+  scroll:     { paddingBottom: 48, paddingHorizontal: 0 },
+  scrollCenter: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
 
-  topBanner:  { backgroundColor: C.primary, alignItems: 'center', paddingTop: 52, paddingBottom: 36 },
-  logoWrap:   { width: 60, height: 60, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  appName:    { fontSize: 24, fontWeight: '800', color: '#fff' },
-  tagline:    { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  topBanner:  { backgroundColor: C.primary, alignItems: 'center', paddingTop: 28, paddingBottom: 20 },
+  logoWrap:   { width: 64, height: 64, borderRadius: 18, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 14 },
+  appName:    { fontSize: 24, fontWeight: '800', color: C.primary, marginBottom: 4 },
+  tagline:    { fontSize: 14, color: C.textSub, marginBottom: 20 },
 
   stepHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
   backBtn:    { padding: 8, borderRadius: 10, backgroundColor: C.primaryLight },
@@ -587,12 +603,13 @@ const s = StyleSheet.create({
   stepLine:   { width: 20, height: 2, backgroundColor: C.border },
 
   card: {
-    backgroundColor: '#fff', borderRadius: 20,
-    marginHorizontal: 11, marginTop: 12, padding: 20,
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1, shadowRadius: 16, elevation: 6,
+    backgroundColor: '#fff', borderRadius: 16,
+    marginHorizontal: 16, marginTop: 12, padding: 24,
+    width: 'auto',
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12, shadowRadius: 24, elevation: 8,
   },
-  cardTitle:  { fontSize: 20, fontWeight: '800', color: C.text, marginBottom: 4 },
+  cardTitle:  { fontSize: 18, fontWeight: '800', color: C.text, marginBottom: 4 },
   cardSub:    { fontSize: 13, color: C.textSub, marginBottom: 18, lineHeight: 18 },
 
   errorBox:   { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fee2e2', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#fecaca' },

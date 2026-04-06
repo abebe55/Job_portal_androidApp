@@ -18,7 +18,8 @@ class EmployerVerificationDetailSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
+    password         = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True, required=False, allow_blank=True, default='')
 
     # Employer verification fields — all optional at field level
     employer_type       = serializers.CharField(required=False, allow_blank=True, default='')
@@ -37,7 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'password', 'role', 'phone', 'location',
+            'id', 'username', 'email', 'password', 'confirm_password', 'role', 'phone', 'location',
             'employer_type', 'employer_type_other', 'organization_name',
             'business_license', 'tin_certificate', 'registration_cert',
             'national_id_front', 'national_id_back', 'national_id_number',
@@ -56,6 +57,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         role = data.get('role', 'jobseeker')
+
+        # Confirm password check (optional — if provided must match)
+        confirm = data.pop('confirm_password', '')
+        if confirm and data.get('password') != confirm:
+            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
 
         if role != 'employer':
             return data

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/AdminLayout';
-import { adminGetJobs, adminApproveJob } from '../../../lib/api';
+import { adminGetJobs, adminApproveJob, adminGetCommission } from '../../../lib/api';
 
 const STATUS_STYLE: any = {
   draft:           { bg: '#f3f4f6', color: '#6b7280',  label: 'Draft' },
@@ -21,6 +21,7 @@ export default function JobsPage() {
   const [fees, setFees]       = useState<Record<number, string>>({});
   const [notes, setNotes]     = useState<Record<number, string>>({});
   const [acting, setActing]   = useState<number | null>(null);
+  const [defaultFee, setDefaultFee] = useState('');
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -30,10 +31,15 @@ export default function JobsPage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    adminGetCommission().then(res => setDefaultFee(res.data.job_post_fee));
+  }, []);
+
   useEffect(() => { fetchJobs(); }, [filter]);
 
   const handleAction = async (id: number, action: 'approve' | 'reject' | 'publish') => {
-    if (action === 'approve' && !fees[id]) {
+    const fee = fees[id] || defaultFee;
+    if (action === 'approve' && !fee) {
       alert('Please set the posting fee before approving.');
       return;
     }
@@ -42,7 +48,7 @@ export default function JobsPage() {
       await adminApproveJob(id, {
         action,
         note: notes[id] || '',
-        posting_fee: fees[id] || undefined,
+        posting_fee: fee || undefined,
       });
       fetchJobs();
       setExpanded(null);
@@ -126,8 +132,8 @@ export default function JobsPage() {
                         <div style={s.feeRow}>
                           <label style={s.feeLabel}>Posting Fee (ETB) *</label>
                           <input style={s.feeInput} type="number" min="0" step="1"
-                            placeholder="e.g. 100"
-                            value={fees[job.id] || job.posting_fee || ''}
+                            placeholder={defaultFee ? `Default: ${defaultFee}` : 'e.g. 100'}
+                            value={fees[job.id] ?? (job.posting_fee || defaultFee)}
                             onChange={e => setFees(f => ({ ...f, [job.id]: e.target.value }))} />
                         </div>
                         <div style={s.feeRow}>

@@ -152,6 +152,41 @@ class RegistrationTests(TestCase):
         }, format='multipart')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_confirm_password_mismatch_returns_400(self):
+        """TC-U08a: confirm_password that doesn't match password → 400"""
+        res = self.client.post(self.url, {
+            'username': 'mismatch_user', 'email': 'mismatch@test.com',
+            'password': 'pass1234', 'confirm_password': 'different99',
+            'role': 'jobseeker',
+        })
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('confirm_password', res.data)
+
+    def test_confirm_password_matching_succeeds(self):
+        """TC-U08b: confirm_password matching password → 201"""
+        res = self.client.post(self.url, {
+            'username': 'match_user', 'email': 'match@test.com',
+            'password': 'pass1234', 'confirm_password': 'pass1234',
+            'role': 'jobseeker',
+        })
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_confirm_password_optional_when_omitted(self):
+        """TC-U08c: confirm_password is optional — omitting it still allows registration"""
+        res = self.client.post(self.url, {
+            'username': 'no_confirm', 'email': 'noconfirm@test.com',
+            'password': 'pass1234', 'role': 'jobseeker',
+        })
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_password_min_length_8_enforced(self):
+        """TC-U08d: Password shorter than 8 characters → 400"""
+        res = self.client.post(self.url, {
+            'username': 'shortpw2', 'email': 'sp2@test.com',
+            'password': 'abc123', 'role': 'jobseeker',
+        })
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 # ── Authentication ────────────────────────────────────────────────────────────
 

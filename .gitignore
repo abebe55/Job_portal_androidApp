@@ -16,6 +16,8 @@ backend/__pycache__/
 .env.local
 .env.*.local
 backend/.env
+backend/.env.local
+admin-web/.env.local
 
 # Database
 backend/db.sqlite3

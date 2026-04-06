@@ -202,5 +202,5 @@ const st: Record<string, React.CSSProperties> = {
     background: '#fff', borderRadius: 20, padding: '3px 12px',
   },
 
-  main: { flex: 1, padding: '24px 60px', overflowY: 'auto' },
+  main: { flex: 1, padding: '24px 60px', overflowY: 'auto', maxWidth: 1200 },
 };

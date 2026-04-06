@@ -20,17 +20,37 @@ const TYPE_LABELS: any = {
   other:      'Other',
 };
 
+function ImageModal({ url, label, onClose }: { url: string; label: string; onClose: () => void }) {
+  return (
+    <div style={s.modalOverlay} onClick={onClose}>
+      <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+        <div style={s.modalHeader}>
+          <span style={s.modalTitle}>{label}</span>
+          <button style={s.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <img src={url} alt={label} style={s.modalImg} />
+      </div>
+    </div>
+  );
+}
+
 function DocLink({ label, url }: { label: string; url: string }) {
+  const [preview, setPreview] = useState(false);
   if (!url) return null;
   const full = url.startsWith('http') ? url : `${BASE}${url}`;
   const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
   return (
-    <div style={s.docRow}>
-      <span style={s.docLabel}>{label}</span>
-      <a href={full} target="_blank" rel="noreferrer" style={s.docLink}>
-        {isImage ? '🖼 View Image' : '📄 View File'}
-      </a>
-    </div>
+    <>
+      <div style={s.docRow}>
+        <span style={s.docLabel}>{label}</span>
+        {isImage ? (
+          <button style={s.docBtn} onClick={() => setPreview(true)}>🖼 View Image</button>
+        ) : (
+          <a href={full} target="_blank" rel="noreferrer" style={s.docLink}>📄 View File</a>
+        )}
+      </div>
+      {preview && <ImageModal url={full} label={label} onClose={() => setPreview(false)} />}
+    </>
   );
 }
 
@@ -279,6 +299,14 @@ const s: Record<string, React.CSSProperties> = {
   docRow:       { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f0f0f0' },
   docLabel:     { fontSize: 13, color: '#374151', fontWeight: 600 },
   docLink:      { fontSize: 12, color: '#2563eb', fontWeight: 700, textDecoration: 'none' },
+  docBtn:       { fontSize: 12, color: '#2563eb', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 },
+
+  modalOverlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  modalBox:     { background: '#fff', borderRadius: 14, overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalHeader:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #f0f0f0' },
+  modalTitle:   { fontWeight: 700, fontSize: 14, color: '#111827' },
+  modalClose:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#6b7280', lineHeight: 1 },
+  modalImg:     { maxWidth: '85vw', maxHeight: '80vh', objectFit: 'contain' as const, display: 'block' },
 
   actionArea:   { borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 10 },
   noteRow:      { display: 'flex', alignItems: 'center', gap: 12 },

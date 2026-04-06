@@ -12,7 +12,7 @@ export default function CommissionPage() {
   useEffect(() => {
     adminGetCommission().then(res => {
       setCurrent(res.data);
-      setFee(res.data.job_post_fee);
+      setFee(''); // keep input empty — current fee is displayed separately
     });
   }, []);
 

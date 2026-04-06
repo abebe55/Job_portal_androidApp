@@ -1,14 +1,39 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { C } from '../constants/theme';
+import { useEffect, useRef, useState } from 'react';
+import { getProfile } from '../services/api';
 
 export default function EmployerPendingScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [checking, setChecking] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const checkApproval = async () => {
+    try {
+      setChecking(true);
+      const res = await getProfile();
+      if (res.data?.is_approved) {
+        clearInterval(intervalRef.current!);
+        router.replace('/(tabs)/');
+      }
+    } catch {}
+    finally { setChecking(false); }
+  };
+
+  useEffect(() => {
+    // Check immediately on mount
+    checkApproval();
+    // Then poll every 10 seconds
+    intervalRef.current = setInterval(checkApproval, 10000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, []);
 
   const handleLogout = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
     logout();
     router.replace('/(auth)/login');
   };
@@ -17,6 +42,9 @@ export default function EmployerPendingScreen() {
     <View style={s.page}>
       {/* Top bar */}
       <View style={s.topBar}>
+        <TouchableOpacity style={s.backBtn} onPress={handleLogout}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
         <View style={s.logoBox}>
           <Ionicons name="briefcase" size={22} color="#7c3aed" />
         </View>
@@ -61,6 +89,13 @@ export default function EmployerPendingScreen() {
           </Text>
         </View>
 
+        <TouchableOpacity style={s.refreshBtn} onPress={checkApproval} disabled={checking}>
+          {checking
+            ? <ActivityIndicator size="small" color={C.primary} />
+            : <Ionicons name="refresh-outline" size={18} color={C.primary} />}
+          <Text style={s.refreshText}>{checking ? 'Checking...' : 'Check Approval Status'}</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color={C.danger} />
           <Text style={s.logoutText}>Sign Out</Text>
@@ -73,6 +108,7 @@ export default function EmployerPendingScreen() {
 const s = StyleSheet.create({
   page:       { flex: 1, backgroundColor: C.bg },
   topBar:     { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#7c3aed', padding: 16, paddingTop: 48 },
+  backBtn:    { padding: 4, marginRight: 4 },
   logoBox:    { width: 36, height: 36, borderRadius: 10, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
   topBarTitle:{ fontSize: 18, fontWeight: '800', color: '#fff' },
 
@@ -91,6 +127,8 @@ const s = StyleSheet.create({
   infoBox:    { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#dbeafe', borderRadius: 12, padding: 14, marginBottom: 24, borderWidth: 1, borderColor: '#93c5fd', width: '100%' },
   infoText:   { flex: 1, fontSize: 12, color: '#1e40af', lineHeight: 18 },
 
+  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#ede9fe', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(124,58,237,0.2)' },
+  refreshText:{ color: C.primary, fontWeight: '700', fontSize: 15 },
   logoutBtn:  { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fee2e2', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13 },
   logoutText: { color: C.danger, fontWeight: '700', fontSize: 15 },
 });
