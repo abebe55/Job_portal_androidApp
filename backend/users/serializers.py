@@ -4,13 +4,23 @@ from .models import User, EmployerVerification
 
 
 class EmployerVerificationDetailSerializer(serializers.ModelSerializer):
-    """Used by admin to see full verification data including user info and doc URLs."""
     username     = serializers.CharField(source='user.username', read_only=True)
     email        = serializers.CharField(source='user.email', read_only=True)
     phone        = serializers.CharField(source='user.phone', read_only=True)
     location     = serializers.CharField(source='user.location', read_only=True)
-    user_id      = serializers.IntegerField(source='user.id', read_only=True)
     is_approved  = serializers.BooleanField(source='user.is_approved', read_only=True)
+    # Use SerializerMethodField to safely handle ObjectId from djongo
+    user_id      = serializers.SerializerMethodField()
+    pk           = serializers.SerializerMethodField()
+
+    def get_user_id(self, obj):
+        try:
+            return int(obj.user.id)
+        except (TypeError, ValueError):
+            return str(obj.user.id)
+
+    def get_pk(self, obj):
+        return self.get_user_id(obj)
 
     class Meta:
         model = EmployerVerification
@@ -46,12 +56,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
+        from django.db import connections
+        db_conn = connections['default']
+        db_conn.ensure_connection()
+        col = db_conn.connection['users_user']
+        if col.find_one({'username': value}):
             raise serializers.ValidationError("A user with that username already exists.")
         return value
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        from django.db import connections
+        db_conn = connections['default']
+        db_conn.ensure_connection()
+        col = db_conn.connection['users_user']
+        if col.find_one({'email': value}):
             raise serializers.ValidationError("A user with that email already exists.")
         return value
 
@@ -136,5 +154,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role', 'phone', 'location', 'bio',
-                  'profile_photo', 'preferred_language', 'is_approved', 'is_suspended']
-        read_only_fields = ['id', 'username', 'email']
+                  'profile_photo', 'preferred_language', 'is_approved', 'is_suspended',
+                  'email_verified']
+        read_only_fields = ['id']  # allow admin to update username, email, and all other fields

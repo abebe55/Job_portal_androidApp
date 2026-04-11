@@ -11,6 +11,7 @@ type User = {
   location: string;
   preferred_language: string;
   is_approved: boolean;
+  email_verified: boolean;
 };
 
 type AuthContextType = {
@@ -19,6 +20,8 @@ type AuthContextType = {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  refreshUser: () => Promise<void>;
+  markEmailVerified: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -56,6 +59,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(profile.data);
   };
 
+  const refreshUser = async () => {
+    const profile = await getProfile();
+    // Merge with existing user to preserve locally-set fields like email_verified
+    // that may not yet be reflected on the server
+    setUser(prev => prev ? { ...prev, ...profile.data } : profile.data);
+  };
+
+  const markEmailVerified = () => {
+    setUser(prev => prev ? { ...prev, email_verified: true } : prev);
+  };
+
   const logout = async () => {
     await removeItem('access_token');
     await removeItem('refresh_token');
@@ -64,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser, markEmailVerified }}>
       {children}
     </AuthContext.Provider>
   );

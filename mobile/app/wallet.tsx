@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Alert, ActivityIndicator, Linking,
+  TextInput, Alert, ActivityIndicator, Modal, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getWallet, initiateDeposit } from '../services/api';
 import PageHeader from '../components/PageHeader';
+import ChapaWebView from '../components/ChapaWebView';
 import { C, S } from '../constants/theme';
 
 const TX_COLORS: any = {
@@ -22,6 +23,7 @@ export default function WalletScreen() {
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [paying, setPaying] = useState(false);
+  const [chapaUrl, setChapaUrl] = useState<string | null>(null);
 
   const fetchWallet = async () => {
     try { const res = await getWallet(); setWallet(res.data); } catch {}
@@ -43,9 +45,11 @@ export default function WalletScreen() {
       });
       const url = res.data.checkout_url;
       if (url) {
-        await Linking.openURL(url);
-        // Refresh wallet after returning
-        setTimeout(fetchWallet, 3000);
+        if (Platform.OS === 'web') {
+          (window as any).location.href = url;
+        } else {
+          setChapaUrl(url);
+        }
       }
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Payment initiation failed');
@@ -141,6 +145,25 @@ export default function WalletScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Chapa WebView modal */}
+      <Modal visible={!!chapaUrl} animationType="slide" onRequestClose={() => { setChapaUrl(null); fetchWallet(); }}>
+        {chapaUrl && (
+          <ChapaWebView
+            url={chapaUrl}
+            title="Top Up Wallet"
+            onComplete={async (txRef) => {
+              setChapaUrl(null);
+              // Poll wallet balance — deposit-return already credited it server-side
+              for (let i = 0; i < 5; i++) {
+                await new Promise(r => setTimeout(r, 1500));
+                await fetchWallet();
+              }
+            }}
+            onCancel={() => { setChapaUrl(null); fetchWallet(); }}
+          />
+        )}
+      </Modal>
     </View>
   );
 }

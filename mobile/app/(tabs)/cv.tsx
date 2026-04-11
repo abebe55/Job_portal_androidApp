@@ -177,6 +177,7 @@ const TABS = [
   { key: 'education',  label: 'Education',  icon: 'school-outline' },
   { key: 'experience', label: 'Experience', icon: 'briefcase-outline' },
   { key: 'documents',  label: 'Documents',  icon: 'documents-outline' },
+  { key: 'languages',  label: 'Languages',  icon: 'language-outline' },
 ];
 
 type EduEntry = { id: string; level: string; field: string; institution: string; enrollment_type: string; gpa: string; gpa_scale: string; graduation_year: string; exit_exam_score: string; exit_exam_year: string; thesis_title: string; };
@@ -185,7 +186,10 @@ const newEdu = (): EduEntry => ({ id: Date.now().toString(), level: '', field: '
 type ExpEntry = { id: string; job_title: string; company: string; location: string; start_date: string; end_date: string; is_current: boolean; duties: string; };
 const newExp = (): ExpEntry => ({ id: Date.now().toString(), job_title: '', company: '', location: '', start_date: '', end_date: '', is_current: false, duties: '' });
 
-// ── Reusable UI ───────────────────────────────────────────────────────────────
+// Language entry — name + 4 skill levels
+type LangEntry = { id: string; name: string; native: boolean; reading: string; writing: string; speaking: string; listening: string; };
+const LANG_SKILLS = ['Excellent', 'Very Good', 'Good', 'Fair', 'Basic'];
+const newLang = (): LangEntry => ({ id: Date.now().toString(), name: '', native: false, reading: '', writing: '', speaking: '', listening: '' });
 function Sec({ title, icon, color = C.primary, children }: any) {
   return (
     <View style={sec.wrap}>
@@ -267,6 +271,62 @@ function UplBtn({ label, icon, value, onPick, type = 'doc' }: any) {
   );
 }
 
+// ── Language skill row — 2x2 grid with Modal dropdown ────────────────────────
+function LangSkillRow({ icon, label, value, options, onSelect }: {
+  icon: string; label: string; value: string;
+  options: string[]; onSelect: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const COLOR_MAP: any = {
+    'Excellent': '#2563eb', 'Very Good': '#7c3aed',
+    'Good': '#d97706', 'Fair': '#6b7280', 'Basic': '#9ca3af',
+  };
+  const color = value ? (COLOR_MAP[value] || '#6b7280') : C.textSub;
+  return (
+    <View style={lsr.cell}>
+      <Text style={lsr.cellLabel}>{icon} {label}</Text>
+      <TouchableOpacity style={[lsr.btn, value && { borderColor: color }]} onPress={() => setOpen(true)}>
+        <Text style={[lsr.btnTxt, { color: value ? color : C.textSub }]} numberOfLines={1}>
+          {value || 'Select'}
+        </Text>
+        <Ionicons name="chevron-down" size={11} color={value ? color : C.textSub} />
+      </TouchableOpacity>
+
+      {/* Modal dropdown — renders above everything */}
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={lsr.modalBg} activeOpacity={1} onPress={() => setOpen(false)} />
+        <View style={lsr.sheet}>
+          <Text style={lsr.sheetTitle}>{icon} {label}</Text>
+          {options.map(opt => (
+            <TouchableOpacity key={opt} style={[lsr.option, value === opt && lsr.optionOn]}
+              onPress={() => { onSelect(opt); setOpen(false); }}>
+              <Text style={[lsr.optionTxt, value === opt && { color: COLOR_MAP[opt] || '#16a34a', fontWeight: '700' }]}>
+                {opt}
+              </Text>
+              {value === opt && <Ionicons name="checkmark-circle" size={16} color={COLOR_MAP[opt] || '#16a34a'} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const lsr = StyleSheet.create({
+  // 2-column grid: Reading+Writing | Speaking+Listening
+  cell:       { flex: 1, paddingHorizontal: 3 },
+  cellLabel:  { fontSize: 11, fontWeight: '700', color: C.textSub, marginBottom: 4 },
+  btn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: C.border, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 7, backgroundColor: C.white, gap: 4 },
+  btnTxt:     { fontSize: 11, fontWeight: '700', flex: 1 },
+  // Modal
+  modalBg:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet:      { backgroundColor: C.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36, maxHeight: '60%' },
+  sheetTitle: { fontSize: 14, fontWeight: '800', color: C.text, marginBottom: 12 },
+  option:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: C.border },
+  optionOn:   { backgroundColor: '#f0fdf4', marginHorizontal: -4, paddingHorizontal: 4, borderRadius: 8 },
+  optionTxt:  { fontSize: 15, color: C.text },
+});
+
 // ── Toast notification ────────────────────────────────────────────────────────
 function Toast({ visible, type, message }: { visible: boolean; type: 'success' | 'error'; message: string }) {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -296,6 +356,9 @@ export default function CVScreen() {
   const [tab, setTab]         = useState('personal');
   const [eduList, setEduList] = useState<EduEntry[]>([newEdu()]);
   const [expList, setExpList] = useState<ExpEntry[]>([newExp()]);
+  const [langList, setLangList] = useState<LangEntry[]>([
+    { id: '1', name: 'Amharic', native: true, reading: 'Native', writing: 'Native', speaking: 'Native', listening: 'Native' },
+  ]);
   const [files, setFiles]     = useState<Record<string, { uri: string; name: string }>>({});
   const [toastVisible, setToastVisible] = useState(false);
   const [toastType, setToastType]       = useState<'success' | 'error'>('success');
@@ -311,8 +374,18 @@ export default function CVScreen() {
     getCV().then(res => {
       const d = res.data;
       setCv(d);
-      try { if (d.education_entries) setEduList(JSON.parse(d.education_entries)); } catch {}
-      try { if (d.experience_entries) setExpList(JSON.parse(d.experience_entries)); } catch {}
+      try { if (d.education_entries) {
+        const parsed = JSON.parse(d.education_entries);
+        setEduList(Array.isArray(parsed) && parsed.length > 0 ? parsed : [newEdu()]);
+      }} catch {}
+      try { if (d.experience_entries) {
+        const parsed = JSON.parse(d.experience_entries);
+        setExpList(Array.isArray(parsed) && parsed.length > 0 ? parsed : [newExp()]);
+      }} catch {}
+      try { if (d.other_languages) {
+        const parsed = JSON.parse(d.other_languages);
+        if (Array.isArray(parsed)) setLangList(parsed);
+      }} catch {}
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -338,7 +411,7 @@ export default function CVScreen() {
     setSaving(true);
     try {
       const form = new FormData();
-      const payload = { ...cv, education_entries: JSON.stringify(eduList), experience_entries: JSON.stringify(expList) };
+      const payload = { ...cv, education_entries: JSON.stringify(eduList), experience_entries: JSON.stringify(expList), other_languages: JSON.stringify(langList) };
 
       // Append only writable, non-file scalar fields
       Object.entries(payload).forEach(([k, v]) => {
@@ -395,6 +468,11 @@ export default function CVScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        {/* Optional-detail tip — shown before Languages tab */}
+        <View style={st.optionalTip}>
+          <Ionicons name="star" size={11} color="#f59e0b" />
+          <Text style={st.optionalTipTxt}>More CV details = more job matches — optional but recommended</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
@@ -606,21 +684,84 @@ export default function CVScreen() {
               </Sec>
             ))}
 
-            <TouchableOpacity style={st.addBtn} onPress={() => setEduList(p => [...p, newEdu()])}>
-              <Ionicons name="add-circle-outline" size={17} color={C.primary} />
-              <Text style={st.addBtnTxt}>Add Another Education Entry</Text>
-            </TouchableOpacity>
-
-            <Sec title="Languages" icon="language-outline" color="#16a34a">
-              <Row2>
-                <View style={{ flex: 1 }}><Drop label="Amharic" value={cv.amharic_level || 'Native'} options={LANG_LV} onChange={(v: string) => set('amharic_level', v)} /></View>
-                <View style={{ flex: 1 }}><Drop label="English" value={cv.english_level} options={LANG_LV} onChange={(v: string) => set('english_level', v)} /></View>
-              </Row2>
-              <Fld label="Other Languages (Oromiffa, Tigrinya, Arabic...)">
-                <TIn value={cv.other_languages} onChange={(v: string) => set('other_languages', v)} placeholder="e.g. Oromiffa (Fluent), Tigrinya (Basic)" />
-              </Fld>
-            </Sec>
+            {/* Only show "Add Another" once the first entry has at least some data */}
+            {(eduList[0]?.level || eduList[0]?.institution || eduList[0]?.field) && (
+              <TouchableOpacity style={st.addBtn} onPress={() => setEduList(p => [...p, newEdu()])}>
+                <Ionicons name="add-circle-outline" size={17} color={C.primary} />
+                <Text style={st.addBtnTxt}>Add Another Education Entry</Text>
+              </TouchableOpacity>
+            )}
           </>
+        )}
+
+        {/* ── TAB: LANGUAGES ─────────────────────────────────────────── */}
+        {tab === 'languages' && (
+          <Sec title="Languages" icon="language-outline" color="#16a34a">
+            <Text style={st.langHint}>Add each language you know. Tap each skill to select your level.</Text>
+
+            {langList.map((lang, idx) => (
+              <View key={lang.id} style={st.langCard}>
+                {/* Language name header */}
+                <View style={st.langCardHeader}>
+                  <View style={st.langNameWrap}>
+                    <Ionicons name="language-outline" size={15} color="#16a34a" />
+                    <TextInput
+                      style={st.langNameInput}
+                      value={lang.name}
+                      onChangeText={v => setLangList(p => p.map(l => l.id === lang.id ? { ...l, name: v } : l))}
+                      placeholder="Language name (e.g. Amharic, English)"
+                      placeholderTextColor={C.textSub}
+                      editable={idx >= 1}
+                    />
+                  </View>
+                  {idx >= 1 && (
+                    <TouchableOpacity onPress={() => setLangList(p => p.filter(l => l.id !== lang.id))} style={st.langRemoveBtn}>
+                      <Ionicons name="close-circle" size={18} color={C.danger} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Native speaker checkbox — independent */}
+                <TouchableOpacity
+                  style={[st.nativeToggle, lang.native && st.nativeToggleOn]}
+                  onPress={() => setLangList(p => p.map(l => l.id === lang.id ? { ...l, native: !l.native } : l))}>
+                  <Ionicons name={lang.native ? 'checkbox' : 'square-outline'} size={18} color={lang.native ? '#16a34a' : C.textSub} />
+                  <Text style={[st.nativeToggleTxt, lang.native && { color: '#16a34a' }]}>Native speaker</Text>
+                </TouchableOpacity>
+
+                {/* 2-column grid — always visible */}
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                  <View style={{ flex: 1, gap: 8 }}>
+                    {(['reading', 'writing'] as const).map(skill => {
+                      const SKILL_ICONS: any = { reading: '📖', writing: '✏️' };
+                      const SKILL_LABELS: any = { reading: 'Reading', writing: 'Writing' };
+                      return (
+                        <LangSkillRow key={skill} icon={SKILL_ICONS[skill]} label={SKILL_LABELS[skill]}
+                          value={lang[skill]} options={LANG_SKILLS}
+                          onSelect={lv => setLangList(p => p.map(l => l.id === lang.id ? { ...l, [skill]: lv } : l))} />
+                      );
+                    })}
+                  </View>
+                  <View style={{ flex: 1, gap: 8 }}>
+                    {(['speaking', 'listening'] as const).map(skill => {
+                      const SKILL_ICONS: any = { speaking: '🗣️', listening: '👂' };
+                      const SKILL_LABELS: any = { speaking: 'Speaking', listening: 'Listening' };
+                      return (
+                        <LangSkillRow key={skill} icon={SKILL_ICONS[skill]} label={SKILL_LABELS[skill]}
+                          value={lang[skill]} options={LANG_SKILLS}
+                          onSelect={lv => setLangList(p => p.map(l => l.id === lang.id ? { ...l, [skill]: lv } : l))} />
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity style={st.addBtn} onPress={() => setLangList(p => [...p, newLang()])}>
+              <Ionicons name="add-circle-outline" size={17} color="#16a34a" />
+              <Text style={[st.addBtnTxt, { color: '#16a34a' }]}>Add Another Language</Text>
+            </TouchableOpacity>
+          </Sec>
         )}
 
         {/* ── TAB: EXPERIENCE ────────────────────────────────────────── */}
@@ -644,47 +785,60 @@ export default function CVScreen() {
                   </Fld>
 
                   {expList.map((exp, idx) => (
-                    <View key={exp.id} style={idx > 0 ? st.expEntry : undefined}>
-                      {idx > 0 && (
-                        <View style={st.eduHdr}>
-                          <Text style={st.eduNum}>Job {idx + 1}</Text>
-                          <TouchableOpacity onPress={() => setExpList(p => p.filter(e => e.id !== exp.id))}>
+                    <View key={exp.id} style={st.expCard}>
+                      {/* Card header */}
+                      <View style={st.expCardHeader}>
+                        <View style={st.expCardNum}>
+                          <Text style={st.expCardNumTxt}>{idx + 1}</Text>
+                        </View>
+                        <Text style={st.expCardTitle}>
+                          {exp.job_title || `Job Experience ${idx + 1}`}
+                        </Text>
+                        {expList.length > 1 && (
+                          <TouchableOpacity onPress={() => setExpList(p => p.filter(e => e.id !== exp.id))} style={st.expRemoveBtn}>
                             <Ionicons name="trash-outline" size={15} color={C.danger} />
                           </TouchableOpacity>
-                        </View>
-                      )}
-                      <Fld label="Job Title" req>
+                        )}
+                      </View>
+
+                      <Fld label="Job Title / Position" req>
                         <TIn value={exp.job_title} onChange={(v: string) => updExp(exp.id, 'job_title', v)} placeholder="e.g. Software Developer, Accountant, Nurse" />
                       </Fld>
                       <Fld label="Company / Organization" req>
                         <TIn value={exp.company} onChange={(v: string) => updExp(exp.id, 'company', v)} placeholder="e.g. Commercial Bank of Ethiopia, Ethio Telecom" />
                       </Fld>
-                      <Fld label="Location">
+                      <Fld label="Work Location">
                         <TIn value={exp.location} onChange={(v: string) => updExp(exp.id, 'location', v)} placeholder="e.g. Addis Ababa, Hawassa" />
                       </Fld>
-                      <Row2>
-                        <View style={{ flex: 1 }}><Fld label="Start Date"><TIn value={exp.start_date} onChange={(v: string) => updExp(exp.id, 'start_date', v)} placeholder="e.g. Jan 2021" /></Fld></View>
+
+                      {/* Date row */}
+                      <View style={st.expDateRow}>
                         <View style={{ flex: 1 }}>
-                          {exp.is_current
-                            ? <Fld label="End Date"><Text style={st.currentJobTxt}>Present (Current Job)</Text></Fld>
-                            : <Fld label="End Date"><TIn value={exp.end_date} onChange={(v: string) => updExp(exp.id, 'end_date', v)} placeholder="e.g. Dec 2023" /></Fld>
-                          }
+                          <Fld label="Start Date">
+                            <TIn value={exp.start_date} onChange={(v: string) => updExp(exp.id, 'start_date', v)} placeholder="e.g. Jan 2021" />
+                          </Fld>
                         </View>
-                      </Row2>
-                      <Fld label="Currently working here?">
-                        <View style={st.chipRow}>
-                          {['Yes', 'No'].map(o => (
-                            <TouchableOpacity key={o}
-                              style={[st.chip, exp.is_current === (o === 'Yes') && st.chipOn]}
-                              onPress={() => updExp(exp.id, 'is_current', o === 'Yes')}>
-                              <Text style={[st.chipTxt, exp.is_current === (o === 'Yes') && st.chipTxtOn]}>{o}</Text>
-                            </TouchableOpacity>
-                          ))}
+                        <View style={{ flex: 1 }}>
+                          <Fld label="End Date">
+                            {exp.is_current
+                              ? <View style={st.currentBadge}><Ionicons name="checkmark-circle" size={14} color={C.success} /><Text style={st.currentBadgeTxt}>Present</Text></View>
+                              : <TIn value={exp.end_date} onChange={(v: string) => updExp(exp.id, 'end_date', v)} placeholder="e.g. Dec 2023" />
+                            }
+                          </Fld>
                         </View>
-                      </Fld>
+                      </View>
+
+                      {/* Current job toggle */}
+                      <TouchableOpacity
+                        style={[st.currentToggle, exp.is_current && st.currentToggleOn]}
+                        onPress={() => updExp(exp.id, 'is_current', !exp.is_current)}>
+                        <Ionicons name={exp.is_current ? 'checkbox' : 'square-outline'} size={18} color={exp.is_current ? C.success : C.textSub} />
+                        <Text style={[st.currentToggleTxt, exp.is_current && { color: C.success }]}>I currently work here</Text>
+                      </TouchableOpacity>
+
                       <Fld label="Main Duties & Responsibilities">
                         <TIn value={exp.duties} onChange={(v: string) => updExp(exp.id, 'duties', v)}
-                          placeholder="Describe your main tasks and achievements in this role..." multi />
+                          placeholder="• Managed daily operations&#10;• Prepared financial reports&#10;• Supervised a team of 5 staff..." multi />
                       </Fld>
                     </View>
                   ))}
@@ -801,6 +955,8 @@ const st = StyleSheet.create({
   scroll:       { paddingLeft: 60, paddingRight: 60, paddingTop: 14, paddingBottom: 48 },
   tabBarWrap:   { backgroundColor: C.white, borderBottomWidth: 1.5, borderBottomColor: C.border },
   tabContent:   { paddingHorizontal: 10, paddingVertical: 8, gap: 6, alignItems: 'center' },
+  optionalTip:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 5, backgroundColor: '#fffbeb', borderTopWidth: 1, borderTopColor: '#fde68a' },
+  optionalTipTxt: { fontSize: 11, color: '#92400e', fontWeight: '600', flex: 1 },
   tab:          { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, backgroundColor: C.bg },
   tabOn:        { backgroundColor: C.primaryLight },
   tabTxt:       { fontSize: 13, color: C.textSub, fontWeight: '700' },
@@ -830,6 +986,38 @@ const st = StyleSheet.create({
   eduNum:       { fontSize: 12, fontWeight: '700', color: C.textSub },
   expEntry:     { backgroundColor: C.bg, borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: C.border },
   currentJobTxt:{ fontSize: 13, color: C.success, fontWeight: '600', paddingVertical: 11 },
+
+  // Experience card
+  expCard:          { backgroundColor: C.bg, borderRadius: 14, padding: 14, marginBottom: 14, borderWidth: 1.5, borderColor: C.border },
+  expCardHeader:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  expCardNum:       { width: 28, height: 28, borderRadius: 14, backgroundColor: '#d97706', justifyContent: 'center', alignItems: 'center' },
+  expCardNumTxt:    { color: '#fff', fontSize: 13, fontWeight: '800' },
+  expCardTitle:     { flex: 1, fontSize: 13, fontWeight: '700', color: C.text },
+  expRemoveBtn:     { padding: 4 },
+  expDateRow:       { flexDirection: 'row', gap: 10 },
+  currentBadge:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#dcfce7', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#86efac' },
+  currentBadgeTxt:  { color: C.success, fontWeight: '700', fontSize: 13 },
+  currentToggle:    { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 10, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, marginBottom: 10 },
+  currentToggleOn:  { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+  currentToggleTxt: { fontSize: 13, color: C.textSub, fontWeight: '600' },
+
+  // Language cards
+  langHint:         { fontSize: 12, color: C.textSub, marginBottom: 12, lineHeight: 18 },
+  langCard:         { backgroundColor: C.bg, borderRadius: 14, padding: 14, marginBottom: 14, borderWidth: 1.5, borderColor: C.border },
+  langCardHeader:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  langNameWrap:     { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderRadius: 10, paddingHorizontal: 10, borderWidth: 1, borderColor: C.border },
+  langNameInput:    { flex: 1, paddingVertical: 10, fontSize: 14, color: C.text },
+  langRemoveBtn:    { padding: 4 },
+  langSkillRow:     { marginBottom: 10 },
+  langSkillLabel:   { fontSize: 12, fontWeight: '700', color: C.textSub, marginBottom: 6 },
+  langLevelChips:   { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  langLvChip:       { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.white },
+  langLvChipOn:     { backgroundColor: '#16a34a', borderColor: '#16a34a' },
+  langLvTxt:        { fontSize: 11, color: C.textSub, fontWeight: '600' },
+  langLvTxtOn:      { color: '#fff', fontWeight: '700' },
+  nativeToggle:     { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 9, borderRadius: 10, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, marginBottom: 4 },
+  nativeToggleOn:   { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+  nativeToggleTxt:  { fontSize: 13, color: C.textSub, fontWeight: '600' },
   addBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primaryLight, borderRadius: 12, padding: 13, marginBottom: 14, borderWidth: 1.5, borderColor: C.primary, borderStyle: 'dashed' },
   addBtnTxt:    { color: C.primary, fontWeight: '700', fontSize: 13 },
   docHint:      { fontSize: 12, color: C.textSub, marginBottom: 12, lineHeight: 18 },

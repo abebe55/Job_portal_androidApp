@@ -6,7 +6,7 @@ from users.serializers import UserSerializer
 
 class ApplicationSerializer(serializers.ModelSerializer):
     job       = JobSerializer(read_only=True)
-    job_id    = serializers.IntegerField(write_only=True)
+    job_id    = serializers.IntegerField()  # readable AND writable for apply + check
     applicant = UserSerializer(read_only=True)
     # Include applicant's CV inline so employer sees full profile
     applicant_cv = serializers.SerializerMethodField()

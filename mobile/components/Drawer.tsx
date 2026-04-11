@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { C } from '../constants/theme';
 
@@ -14,35 +15,34 @@ const DRAWER_W = Math.min(W * 0.72, 280);
 type NavItem = { icon: string; label: string; path: string };
 type Props = { visible: boolean; onClose: () => void };
 
-// ── Employer-only nav items ───────────────────────────────────────────────────
-const EMPLOYER_ITEMS: NavItem[] = [
-  { icon: 'add-circle-outline',  label: 'Post a Job',      path: '/post-job' },
-  { icon: 'list-outline',        label: 'My Posted Jobs',  path: '/my-jobs' },
-  { icon: 'wallet-outline',      label: 'My Wallet',       path: '/wallet' },
-];
-
-// ── Job-seeker nav items ──────────────────────────────────────────────────────
-const SEEKER_ITEMS: NavItem[] = [
-  { icon: 'briefcase-outline',        label: 'Browse Jobs',      path: '/(tabs)/' },
-  { icon: 'search-outline',           label: 'Search Jobs',      path: '/(tabs)/search' },
-  { icon: 'create-outline',           label: 'Create CV',        path: '/(tabs)/cv' },
-  { icon: 'document-text-outline',    label: 'My CV',            path: '/(tabs)/mycv' },
-  { icon: 'checkmark-circle-outline', label: 'My Applications',  path: '/(tabs)/applications' },
-];
-
-// ── Common items ──────────────────────────────────────────────────────────────
-const COMMON_ITEMS: NavItem[] = [
-  { icon: 'person-outline', label: 'Profile', path: '/(tabs)/profile' },
-];
-
 export default function Drawer({ visible, onClose }: Props) {
   const slide = useRef(new Animated.Value(-DRAWER_W)).current;
   const fade  = useRef(new Animated.Value(0)).current;
   const router   = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const isEmployer = user?.role === 'employer';
+
+  // Build nav items using translations
+  const EMPLOYER_ITEMS: NavItem[] = [
+    { icon: 'add-circle-outline',  label: t('postJob'),      path: '/post-job' },
+    { icon: 'list-outline',        label: t('myPostedJobs'), path: '/my-jobs' },
+    { icon: 'wallet-outline',      label: t('myWallet'),     path: '/wallet' },
+  ];
+
+  const SEEKER_ITEMS: NavItem[] = [
+    { icon: 'briefcase-outline',        label: t('browseJobs'),      path: '/(tabs)/' },
+    { icon: 'search-outline',           label: t('searchJobs'),      path: '/(tabs)/search' },
+    { icon: 'create-outline',           label: t('createCV'),        path: '/(tabs)/cv' },
+    { icon: 'document-text-outline',    label: t('myCV'),            path: '/(tabs)/mycv' },
+    { icon: 'checkmark-circle-outline', label: t('myApplications'),  path: '/(tabs)/applications' },
+  ];
+
+  const COMMON_ITEMS: NavItem[] = [
+    { icon: 'person-outline', label: t('profile'), path: '/(tabs)/profile' },
+  ];
 
   useEffect(() => {
     Animated.parallel([
@@ -101,7 +101,6 @@ export default function Drawer({ visible, onClose }: Props) {
         </TouchableWithoutFeedback>
 
         <Animated.View style={[styles.drawer, { transform: [{ translateX: slide }] }]}>
-          {/* Header */}
           <View style={styles.drawerHeader}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user?.username?.[0]?.toUpperCase() ?? 'U'}</Text>
@@ -110,37 +109,31 @@ export default function Drawer({ visible, onClose }: Props) {
             <Text style={styles.drawerEmail}>{user?.email}</Text>
             <View style={[styles.roleBadge, isEmployer && styles.roleBadgeEmployer]}>
               <Text style={styles.roleBadgeText}>
-                {isEmployer ? '🏢 Employer' : '🔍 Job Seeker'}
+                {isEmployer ? `🏢 ${t('roleBadgeEmployer')}` : `🔍 ${t('roleBadgeSeeker')}`}
               </Text>
             </View>
           </View>
 
           <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
 
-            {/* ── EMPLOYER SECTION ── */}
             {isEmployer && (
               <>
-                {renderSection('Employer', EMPLOYER_ITEMS, '#2563eb')}
+                {renderSection(t('employer'), EMPLOYER_ITEMS, '#2563eb')}
                 <View style={styles.divider} />
               </>
             )}
 
-            {/* ── JOB SEEKER SECTION ── */}
-            {renderSection(isEmployer ? 'Job Seeker' : 'Menu', SEEKER_ITEMS)}
+            {renderSection(isEmployer ? t('jobSeeker') : t('menu'), SEEKER_ITEMS)}
 
             <View style={styles.divider} />
-
-            {/* ── COMMON ── */}
             {COMMON_ITEMS.map(renderItem)}
-
             <View style={styles.divider} />
 
-            {/* Sign out */}
             <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <View style={[styles.menuIconWrap, { backgroundColor: '#fee2e2' }]}>
                 <Ionicons name="log-out-outline" size={18} color={C.danger} />
               </View>
-              <Text style={[styles.menuLabel, { color: C.danger }]}>Sign Out</Text>
+              <Text style={[styles.menuLabel, { color: C.danger }]}>{t('signOut')}</Text>
             </TouchableOpacity>
 
           </ScrollView>

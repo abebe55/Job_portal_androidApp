@@ -56,28 +56,24 @@ TEMPLATES = [
 ]
 
 # ── Database ─────────────────────────────────────────────────────────────────
-# Uses SQLite locally (no setup needed).
-# For production set USE_POSTGRES=True and fill POSTGRES_* vars in .env
-USE_POSTGRES = config('USE_POSTGRES', default=False, cast=bool)
-
-if USE_POSTGRES:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME':     config('POSTGRES_DB',       default='jobportal'),
-            'USER':     config('POSTGRES_USER',     default='postgres'),
-            'PASSWORD': config('POSTGRES_PASSWORD', default=''),
-            'HOST':     config('POSTGRES_HOST',     default='localhost'),
-            'PORT':     config('POSTGRES_PORT',     default='5432'),
-        }
+# Full MongoDB Atlas via djongo — no SQLite
+DATABASES = {
+    'default': {
+        'ENGINE': 'config.db_backend',  # custom wrapper to prevent MongoClient close
+        'NAME': config('MONGO_DB_NAME', default='jobportal'),
+        'ENFORCE_SCHEMA': False,
+        'CLIENT': {
+            'host': config('MONGO_URI'),
+            'tls': True,
+            'tlsAllowInvalidCertificates': False,
+            'retryWrites': True,
+            'maxPoolSize': 10,
+            'serverSelectionTimeoutMS': 5000,
+            'connectTimeoutMS': 10000,
+            'socketTimeoutMS': 20000,
+        },
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -102,6 +98,16 @@ CORS_ALLOW_ALL_ORIGINS = True
 CHAPA_SECRET_KEY = config('CHAPA_SECRET_KEY', default='')
 BACKEND_URL  = config('BACKEND_URL',  default='http://127.0.0.1:8000')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
+# ── Email (SMTP) ──────────────────────────────────────────────────────────────
+EMAIL_BACKEND   = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST      = config('EMAIL_HOST',      default='smtp.gmail.com')
+EMAIL_PORT      = config('EMAIL_PORT',      default=465, cast=int)
+EMAIL_USE_TLS   = config('EMAIL_USE_TLS',   default=False, cast=bool)
+EMAIL_USE_SSL   = config('EMAIL_USE_SSL',   default=True,  cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL', default='JobPortal <noreply@jobportal.et>')
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Addis_Ababa'

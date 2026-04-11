@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Modal,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+  ScrollView, ActivityIndicator, Modal, Platform,
+} from 'react-native';import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { createJob } from '../services/api';
 import PageHeader from '../components/PageHeader';
@@ -44,7 +43,15 @@ const LOCATIONS = [
 ];
 
 const GENDER_OPTIONS = ['Any', 'Male', 'Female'];
-const EXPERIENCE_OPTIONS = ['No Experience Required', 'Less than 1 year', '1 year', '2 years', '3 years', '4 years', '5+ years', '10+ years'];
+const EXPERIENCE_OPTIONS = [
+  { key: 'none',   label: 'No Experience',   desc: 'Fresh graduates welcome', icon: 'star-outline' },
+  { key: '<1',     label: 'Less than 1 yr',  desc: 'Entry level',             icon: 'time-outline' },
+  { key: '1',      label: '1 year',          desc: 'Some experience',         icon: 'hourglass-outline' },
+  { key: '2',      label: '2 years',         desc: 'Growing professional',    icon: 'trending-up-outline' },
+  { key: '3',      label: '3 years',         desc: 'Experienced',             icon: 'ribbon-outline' },
+  { key: '5+',     label: '5+ years',        desc: 'Senior level',            icon: 'medal-outline' },
+  { key: '10+',    label: '10+ years',       desc: 'Expert / Manager',        icon: 'trophy-outline' },
+];
 const VACANCY_OPTIONS = ['1', '2', '3', '4', '5', '6–10', '10–20', '20+'];
 const SALARY_TYPES = ['Fixed', 'Negotiable', 'Range'];
 
@@ -116,11 +123,16 @@ export default function PostJobScreen() {
     deadline: '',
     requirements: '',
     gender_preference: 'Any',
-    experience_required: 'No Experience Required',
+    experience_required: 'none',
     vacancies: '1',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const today = new Date();
+  const [pickerYear, setPickerYear]   = useState(today.getFullYear());
+  const [pickerMonth, setPickerMonth] = useState(today.getMonth() + 1);
+  const [pickerDay, setPickerDay]     = useState(today.getDate());
   const router = useRouter();
 
   const set = (key: string, val: string) => {
@@ -162,7 +174,10 @@ export default function PostJobScreen() {
       if (form.requirements.trim()) fullDesc += `\n\nRequirements:\n${form.requirements.trim()}`;
       if (form.work_mode !== 'onsite') fullDesc += `\n\nWork Mode: ${WORK_MODES.find(w => w.key === form.work_mode)?.label || form.work_mode}`;
       if (form.gender_preference !== 'Any') fullDesc += `\n\nGender Preference: ${form.gender_preference}`;
-      if (form.experience_required !== 'No Experience Required') fullDesc += `\n\nExperience Required: ${form.experience_required}`;
+      if (form.experience_required !== 'none') {
+        const expLabel = EXPERIENCE_OPTIONS.find(e => e.key === form.experience_required)?.label || form.experience_required;
+        fullDesc += `\n\nExperience Required: ${expLabel}`;
+      }
       if (form.vacancies !== '1') fullDesc += `\n\nNumber of Vacancies: ${form.vacancies}`;
 
       await createJob({
@@ -302,8 +317,26 @@ export default function PostJobScreen() {
             ))}
           </View>
 
-          <Dropdown label="Experience Required" value={form.experience_required}
-            options={EXPERIENCE_OPTIONS} onChange={v => set('experience_required', v)} />
+          <Text style={[s.label, { marginTop: 14 }]}>Experience Required</Text>
+          <View style={s.expGrid}>
+            {EXPERIENCE_OPTIONS.map(opt => (
+              <TouchableOpacity key={opt.key}
+                style={[s.expCard, form.experience_required === opt.key && s.expCardActive]}
+                onPress={() => set('experience_required', opt.key)}>
+                <Ionicons name={opt.icon as any} size={20}
+                  color={form.experience_required === opt.key ? C.primary : C.textSub} />
+                <Text style={[s.expCardLabel, form.experience_required === opt.key && s.expCardLabelActive]}>
+                  {opt.label}
+                </Text>
+                <Text style={s.expCardDesc}>{opt.desc}</Text>
+                {form.experience_required === opt.key && (
+                  <View style={s.expCardCheck}>
+                    <Ionicons name="checkmark" size={10} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <Dropdown label="Number of Vacancies (How many people to hire)" value={form.vacancies}
             options={VACANCY_OPTIONS} onChange={v => set('vacancies', v)} />
@@ -395,10 +428,102 @@ export default function PostJobScreen() {
           )}
 
           <Field label="Application Deadline">
-            <TextInput style={s.input} value={form.deadline}
-              onChangeText={v => set('deadline', v)}
-              placeholder="YYYY-MM-DD  (e.g. 2025-06-30)"
-              placeholderTextColor={C.textSub} keyboardType="numbers-and-punctuation" />
+            {Platform.OS === 'web' ? (
+              // Web: native HTML date input
+              <View style={s.input}>
+                <input
+                  type="date"
+                  value={form.deadline}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => set('deadline', e.target.value)}
+                  style={{
+                    border: 'none', outline: 'none', background: 'transparent',
+                    fontSize: 14, color: form.deadline ? C.text : C.textSub,
+                    width: '100%', fontFamily: 'inherit',
+                  }}
+                />
+              </View>
+            ) : (
+              // Native: tap button opens date picker modal
+              <>
+                <TouchableOpacity
+                  style={[s.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                  onPress={() => setShowDatePicker(true)}>
+                  <Text style={{ fontSize: 14, color: form.deadline ? C.text : C.textSub }}>
+                    {form.deadline || 'Tap to select deadline date'}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={18} color={C.primary} />
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <Modal visible transparent animationType="fade">
+                    <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
+                      activeOpacity={1} onPress={() => setShowDatePicker(false)}>
+                      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: 300 }}
+                        onStartShouldSetResponder={() => true}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: C.text, marginBottom: 16, textAlign: 'center' }}>
+                          Select Deadline
+                        </Text>
+                        {/* Year picker */}
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: C.textSub, marginBottom: 6 }}>Year</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                          {[2026, 2027, 2028, 2029, 2030].map(y => (
+                            <TouchableOpacity key={y}
+                              style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: pickerYear === y ? C.primary : C.bg, borderWidth: 1, borderColor: pickerYear === y ? C.primary : C.border }}
+                              onPress={() => setPickerYear(y)}>
+                              <Text style={{ color: pickerYear === y ? '#fff' : C.text, fontWeight: '700' }}>{y}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                        {/* Month picker */}
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: C.textSub, marginBottom: 6 }}>Month</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+                          {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
+                            <TouchableOpacity key={m}
+                              style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, backgroundColor: pickerMonth === i+1 ? C.primary : C.bg, borderWidth: 1, borderColor: pickerMonth === i+1 ? C.primary : C.border }}
+                              onPress={() => setPickerMonth(i+1)}>
+                              <Text style={{ color: pickerMonth === i+1 ? '#fff' : C.text, fontWeight: '600', fontSize: 12 }}>{m}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                        {/* Day picker */}
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: C.textSub, marginBottom: 6 }}>Day</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                            <TouchableOpacity key={d}
+                              style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: pickerDay === d ? C.primary : C.bg, borderWidth: 1, borderColor: pickerDay === d ? C.primary : C.border, justifyContent: 'center', alignItems: 'center' }}
+                              onPress={() => setPickerDay(d)}>
+                              <Text style={{ color: pickerDay === d ? '#fff' : C.text, fontWeight: '600', fontSize: 12 }}>{d}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                        <TouchableOpacity
+                          style={{ backgroundColor: C.primary, borderRadius: 10, padding: 13, alignItems: 'center' }}
+                          onPress={() => {
+                            const mm = String(pickerMonth).padStart(2, '0');
+                            const dd = String(pickerDay).padStart(2, '0');
+                            set('deadline', `${pickerYear}-${mm}-${dd}`);
+                            setShowDatePicker(false);
+                          }}>
+                          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Confirm Date</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={{ marginTop: 10, alignItems: 'center' }} onPress={() => { set('deadline', ''); setShowDatePicker(false); }}>
+                          <Text style={{ color: C.textSub, fontSize: 13 }}>Clear / No Deadline</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                  </Modal>
+                )}
+              </>
+            )}
+            {form.deadline ? (
+              <Text style={{ fontSize: 11, color: C.textSub, marginTop: 4 }}>
+                📅 Deadline: {form.deadline}
+              </Text>
+            ) : (
+              <Text style={{ fontSize: 11, color: C.textSub, marginTop: 4 }}>
+                Leave empty for no deadline
+              </Text>
+            )}
           </Field>
         </View>
 
@@ -481,4 +606,13 @@ const s = StyleSheet.create({
   submitBtn:    { backgroundColor: C.primary, borderRadius: 13, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 },
   submitBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '800' },
   footerNote:   { fontSize: 12, color: C.textSub, textAlign: 'center', lineHeight: 18, paddingHorizontal: 8 },
+
+  // Experience cards
+  expGrid:          { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6, marginBottom: 4 },
+  expCard:          { width: '30%', minWidth: 90, padding: 10, borderRadius: 12, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.white, alignItems: 'center', gap: 4, position: 'relative' },
+  expCardActive:    { backgroundColor: '#f0eeff', borderColor: C.primary },
+  expCardLabel:     { fontSize: 11, fontWeight: '700', color: C.textSub, textAlign: 'center' },
+  expCardLabelActive: { color: C.primary },
+  expCardDesc:      { fontSize: 9, color: C.textSub, textAlign: 'center', lineHeight: 13 },
+  expCardCheck:     { position: 'absolute', top: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: C.primary, justifyContent: 'center', alignItems: 'center' },
 });

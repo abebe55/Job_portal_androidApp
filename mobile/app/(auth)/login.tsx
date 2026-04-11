@@ -5,22 +5,24 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { C } from '../../constants/theme';
 
 export default function LoginScreen() {
-  const [username, setUsername]   = useState('');
-  const [password, setPassword]   = useState('');
-  const [showPass, setShowPass]   = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState('');
-  const { login }                 = useAuth();
-  const router                    = useRouter();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const { login }               = useAuth();
+  const router                  = useRouter();
+  const { t }                   = useTranslation();
 
   const handleLogin = async () => {
     setError('');
     if (!username.trim() || !password.trim()) {
-      setError('Please enter your username and password.');
+      setError(t('enterUsernamePassword'));
       return;
     }
     setLoading(true);
@@ -32,7 +34,7 @@ export default function LoginScreen() {
         e?.response?.data?.detail ||
         e?.response?.data?.non_field_errors?.[0] ||
         e?.message ||
-        'Invalid username or password.';
+        t('invalidCredentials');
       setError(msg);
     }
     setLoading(false);
@@ -45,14 +47,12 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-          {/* Logo */}
           <View style={styles.logoWrap}>
             <Ionicons name="briefcase" size={32} color={C.primary} />
           </View>
           <Text style={styles.title}>JobPortal</Text>
-          <Text style={styles.sub}>Sign in to your account</Text>
+          <Text style={styles.sub}>{t('signInToAccount')}</Text>
 
-          {/* Error */}
           {error ? (
             <View style={styles.errorBox}>
               <Ionicons name="alert-circle-outline" size={16} color={C.danger} />
@@ -60,12 +60,11 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Username */}
           <View style={styles.inputWrap}>
             <Ionicons name="person-outline" size={18} color={C.textSub} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Username"
+              placeholder={t('username')}
               value={username}
               onChangeText={v => { setUsername(v); setError(''); }}
               autoCapitalize="none"
@@ -74,12 +73,11 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Password */}
           <View style={styles.inputWrap}>
             <Ionicons name="lock-closed-outline" size={18} color={C.textSub} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder={t('password')}
               value={password}
               onChangeText={v => { setPassword(v); setError(''); }}
               secureTextEntry={!showPass}
@@ -97,13 +95,17 @@ export default function LoginScreen() {
           >
             {loading
               ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.btnText}>Sign In</Text>
+              : <Text style={styles.btnText}>{t('signIn')}</Text>
             }
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/(auth)/register')}>
-            <Text style={styles.linkText}>{"Don't have an account? "}</Text>
-            <Text style={styles.linkBold}>Register</Text>
+            <Text style={styles.linkText}>{t('noAccount')}</Text>
+            <Text style={styles.linkBold}>{t('register')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={{ marginTop: 12 }} onPress={() => router.push('/(auth)/forgot-password')}>
+            <Text style={{ color: C.primary, fontSize: 14, fontWeight: '600' }}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -115,39 +117,18 @@ const styles = StyleSheet.create({
   page:       { flex: 1, backgroundColor: C.bg },
   scroll:     { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 32,
-    width: '100%',
-    maxWidth: 380,
-    shadowColor: C.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 8,
+    backgroundColor: '#fff', borderRadius: 16, padding: 32,
+    width: '100%', maxWidth: 380,
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12, shadowRadius: 24, elevation: 8,
     alignItems: 'center',
   },
-  logoWrap: {
-    width: 64, height: 64, borderRadius: 18,
-    backgroundColor: C.primaryLight,
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 14,
-  },
+  logoWrap:   { width: 64, height: 64, borderRadius: 18, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 14 },
   title:      { fontSize: 24, fontWeight: '800', color: C.primary, marginBottom: 6 },
   sub:        { color: C.textSub, fontSize: 14, marginBottom: 24 },
-  errorBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#fee2e2', borderRadius: 10, padding: 12, marginBottom: 14,
-    borderWidth: 1, borderColor: '#fecaca', width: '100%',
-  },
+  errorBox:   { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fee2e2', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#fecaca', width: '100%' },
   errorText:  { flex: 1, color: C.danger, fontSize: 13, fontWeight: '500' },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.bg, borderRadius: 10,
-    borderWidth: 1, borderColor: C.border,
-    marginBottom: 12, paddingHorizontal: 14,
-    width: '100%',
-  },
+  inputWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: 10, borderWidth: 1, borderColor: C.border, marginBottom: 12, paddingHorizontal: 14, width: '100%' },
   inputIcon:  { marginRight: 10 },
   input:      { flex: 1, paddingVertical: 13, fontSize: 15, color: C.text },
   eyeBtn:     { padding: 4 },

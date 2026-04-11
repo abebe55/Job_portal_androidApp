@@ -1,50 +1,26 @@
-# Dependencies
-node_modules/
-**/node_modules/
-
-# Python
-backend/venv/
-backend/__pycache__/
-**/__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Python / Django
+__pycache__/
 *.py[cod]
-
-# Environment variables (secrets)
+venv/
 .env
-.env.local
-.env.*.local
-backend/.env
-backend/.env.local
-admin-web/.env.local
-
-# Database
 backend/db.sqlite3
-
-# Next.js build output
-admin-web/.next/
-admin-web/out/
-
-# Expo
-mobile/.expo/
-mobile/web/
-
-# Media uploads
 backend/media/
+backend/node_modules/
 
-# OS / Editor
+# Node / Next.js / Expo
+node_modules/
+.next/
+.expo/
+dist/
+android/
+ios/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
 .DS_Store
 Thumbs.db
 *.lnk
-.vscode/
-.idea/
-
-# Kiro
-.kiro/
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*

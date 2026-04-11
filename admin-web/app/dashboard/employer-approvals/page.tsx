@@ -56,19 +56,29 @@ function DocLink({ label, url }: { label: string; url: string }) {
 
 export default function EmployerApprovalsPage() {
   const [verifs, setVerifs]   = useState<any[]>([]);
+  const [allVerifs, setAllVerifs] = useState<any[]>([]); // for counts
   const [filter, setFilter]   = useState('pending');
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [notes, setNotes]     = useState<Record<number, string>>({});
-  const [acting, setActing]   = useState<number | null>(null);
+  const [acting, setActing] = useState<string | null>(null); // 'id-approve' | 'id-reject'
   const [success, setSuccess] = useState('');
   const [error, setError]     = useState('');
 
   const fetchVerifs = async () => {
     setLoading(true);
-    const params = filter !== 'all' ? { status: filter } : {};
-    const res = await adminGetEmployerVerifications(params);
-    setVerifs(res.data);
+    try {
+      // Fetch filtered list for display
+      const params = filter !== 'all' ? { status: filter } : {};
+      const res = await adminGetEmployerVerifications(params);
+      const data = res.data.map((v: any) => ({ ...v, id: v.user_id }));
+      setVerifs(data);
+      // Fetch all for accurate counts
+      const allRes = await adminGetEmployerVerifications({});
+      setAllVerifs(allRes.data);
+    } catch (e) {
+      // ignore
+    }
     setLoading(false);
   };
 
@@ -78,7 +88,8 @@ export default function EmployerApprovalsPage() {
   }, [success]);
 
   const handleAction = async (id: number, action: 'approve' | 'reject') => {
-    setActing(id);
+    setActing(`${id}-${action}`);
+    setError('');
     try {
       await adminReviewEmployerVerification(id, { action, note: notes[id] || '' });
       setSuccess(`Employer ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
@@ -91,9 +102,9 @@ export default function EmployerApprovalsPage() {
   };
 
   const counts = {
-    pending:  verifs.filter(v => v.status === 'pending').length,
-    approved: verifs.filter(v => v.status === 'approved').length,
-    rejected: verifs.filter(v => v.status === 'rejected').length,
+    pending:  allVerifs.filter(v => v.status === 'pending').length,
+    approved: allVerifs.filter(v => v.status === 'approved').length,
+    rejected: allVerifs.filter(v => v.status === 'rejected').length,
   };
 
   return (
@@ -158,7 +169,6 @@ export default function EmployerApprovalsPage() {
           {verifs.map(v => {
             const st = STATUS_STYLE[v.status] || STATUS_STYLE.pending;
             const isOpen = expanded === v.id;
-            const busy = acting === v.id;
             return (
               <div key={v.id} style={s.card}>
                 {/* Header row */}
@@ -227,13 +237,17 @@ export default function EmployerApprovalsPage() {
                             onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))} />
                         </div>
                         <div style={s.btnRow}>
-                          <button style={{ ...s.approveBtn, opacity: busy ? 0.6 : 1 }}
-                            disabled={busy} onClick={() => handleAction(v.id, 'approve')}>
-                            {busy ? '…' : '✓ Approve Employer'}
+                          <button
+                            style={{ ...s.approveBtn, opacity: acting === `${v.id}-approve` ? 0.7 : 1 }}
+                            disabled={!!acting}
+                            onClick={() => handleAction(v.id, 'approve')}>
+                            {acting === `${v.id}-approve` ? 'Approving…' : '✓ Approve Employer'}
                           </button>
-                          <button style={{ ...s.rejectBtn, opacity: busy ? 0.6 : 1 }}
-                            disabled={busy} onClick={() => handleAction(v.id, 'reject')}>
-                            {busy ? '…' : '✕ Reject'}
+                          <button
+                            style={{ ...s.rejectBtn, opacity: acting === `${v.id}-reject` ? 0.7 : 1 }}
+                            disabled={!!acting}
+                            onClick={() => handleAction(v.id, 'reject')}>
+                            {acting === `${v.id}-reject` ? 'Rejecting…' : '✕ Reject'}
                           </button>
                         </div>
                       </div>
@@ -313,6 +327,6 @@ const s: Record<string, React.CSSProperties> = {
   noteLabel:    { fontSize: 13, fontWeight: 600, color: '#6b7280', minWidth: 200 },
   noteInput:    { flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, background: '#f9fafb' },
   btnRow:       { display: 'flex', gap: 10 },
-  approveBtn:   { padding: '10px 24px', borderRadius: 8, border: 'none', background: '#dcfce7', color: '#15803d', fontWeight: 800, fontSize: 13, cursor: 'pointer' },
-  rejectBtn:    { padding: '10px 24px', borderRadius: 8, border: 'none', background: '#fee2e2', color: '#b91c1c', fontWeight: 800, fontSize: 13, cursor: 'pointer' },
+  approveBtn:   { padding: '11px 28px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: '0.01em' },
+  rejectBtn:    { padding: '11px 28px', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: '0.01em' },
 };

@@ -157,7 +157,7 @@ class CV(models.Model):
     # ── Languages ────────────────────────────────────────────────────────────
     amharic_level    = models.CharField(max_length=20, blank=True, default='Native')
     english_level    = models.CharField(max_length=20, blank=True)
-    other_languages  = models.CharField(max_length=200, blank=True)
+    other_languages  = models.TextField(blank=True)
     # ── Uploaded Documents ───────────────────────────────────────────────────
     transcript_file       = models.FileField(upload_to='cv/transcripts/', blank=True, null=True)
     exit_exam_file        = models.FileField(upload_to='cv/exit_exams/', blank=True, null=True)

@@ -70,6 +70,18 @@ class Job(models.Model):
     is_approved    = models.BooleanField(default=False)
     approval_note  = models.TextField(blank=True)
 
+    # ── Deadline extension request ────────────────────────────────────────────
+    extend_requested    = models.BooleanField(default=False)
+    extend_new_deadline = models.DateField(null=True, blank=True)
+    extend_fee          = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    extend_fee_tx_ref   = models.CharField(max_length=200, blank=True)
+    extend_fee_paid     = models.BooleanField(default=False)
+    extend_status       = models.CharField(
+        max_length=20,
+        choices=(('none','None'),('pending','Pending'),('fee_set','Fee Set'),('paid','Paid'),('approved','Approved'),('rejected','Rejected')),
+        default='none'
+    )
+
     class Meta:
         ordering = ['-created_at']
 
@@ -85,3 +97,16 @@ class Job(models.Model):
         if self.deadline and self.deadline < timezone.now().date():
             return False
         return True
+
+    @property
+    def is_expired(self):
+        from django.utils import timezone
+        return bool(self.deadline and self.deadline < timezone.now().date())
+
+    def auto_close_if_expired(self):
+        """Call this to deactivate job when deadline passes."""
+        from django.utils import timezone
+        if self.status == 'published' and self.deadline and self.deadline < timezone.now().date():
+            self.status = 'closed'
+            self.is_active = False
+            self.save(update_fields=['status', 'is_active'])

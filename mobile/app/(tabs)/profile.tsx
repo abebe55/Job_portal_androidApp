@@ -3,12 +3,14 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { C } from '../../constants/theme';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
   const [isAmharic, setIsAmharic] = useState(i18n.language === 'am');
 
   const toggleLanguage = (val: boolean) => {
@@ -17,26 +19,25 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => { logout(); router.replace('/(auth)/login'); } },
+    Alert.alert(t('signOut'), t('signOutConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('signOut'), style: 'destructive', onPress: () => { logout(); router.replace('/(auth)/login'); } },
     ]);
   };
 
   const employerItems = [
-    { icon: 'wallet-outline', label: 'My Wallet', path: '/wallet', color: '#16a34a' },
-    { icon: 'add-circle-outline', label: 'Post a Job', path: '/post-job', color: C.primary },
-    { icon: 'list-outline', label: 'My Posted Jobs', path: '/my-jobs', color: C.primary },
+    { icon: 'wallet-outline', label: t('myWallet'), path: '/wallet', color: '#16a34a' },
+    { icon: 'add-circle-outline', label: t('postJob'), path: '/post-job', color: C.primary },
+    { icon: 'list-outline', label: t('myPostedJobs'), path: '/my-jobs', color: C.primary },
   ];
 
   const commonItems = [
-    { icon: 'document-text-outline', label: 'My CV', path: '/(tabs)/cv', color: C.primary },
-    { icon: 'checkmark-circle-outline', label: 'My Applications', path: '/(tabs)/applications', color: C.primary },
+    { icon: 'document-text-outline', label: t('myCV'), path: '/(tabs)/cv', color: C.primary },
+    { icon: 'checkmark-circle-outline', label: t('myApplications'), path: '/(tabs)/applications', color: C.primary },
   ];
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 60 }}>
-      {/* Compact profile card */}
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{user?.username?.[0]?.toUpperCase() ?? 'U'}</Text>
@@ -46,13 +47,14 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{user?.email}</Text>
         </View>
         <View style={styles.roleBadge}>
-          <Text style={styles.roleBadgeText}>{user?.role === 'employer' ? 'Employer' : 'Job Seeker'}</Text>
+          <Text style={styles.roleBadgeText}>
+            {user?.role === 'employer' ? t('roleBadgeEmployer') : t('roleBadgeSeeker')}
+          </Text>
         </View>
       </View>
 
-      {/* Language toggle */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Language / ቋንቋ</Text>
+        <Text style={styles.cardTitle}>{t('language')}</Text>
         <View style={styles.langRow}>
           <Text style={[styles.langLabel, !isAmharic && styles.langActive]}>English</Text>
           <Switch
@@ -65,9 +67,8 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Menu */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Menu</Text>
+        <Text style={styles.cardTitle}>{t('menu')}</Text>
         {user?.role === 'employer' && employerItems.map(item => (
           <TouchableOpacity key={item.path} style={styles.menuItem} onPress={() => router.push(item.path as any)}>
             <View style={styles.menuIconWrap}>
@@ -88,10 +89,9 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      {/* Sign out */}
       <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={18} color={C.danger} />
-        <Text style={styles.signOutText}>Sign Out</Text>
+        <Text style={styles.signOutText}>{t('signOut')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

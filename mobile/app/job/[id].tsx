@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getJobDetail, applyJob } from '../../services/api';
+import { getJobDetail, applyJob, getMyApplications } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
 import { C, S } from '../../constants/theme';
@@ -12,19 +12,44 @@ export default function JobDetailScreen() {
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+  const [applied, setApplied] = useState(false);
+  const [applyError, setApplyError] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
-    getJobDetail(Number(id)).then(res => { setJob(res.data); setLoading(false); });
+    const load = async () => {
+      try {
+        const [jobRes, appsRes] = await Promise.all([
+          getJobDetail(Number(id)),
+          user?.role === 'jobseeker' ? getMyApplications() : Promise.resolve({ data: [] }),
+        ]);
+        setJob(jobRes.data);
+        // Check if already applied — use job_id (direct FK) for reliable comparison
+        const jobIdNum = Number(id);
+        const alreadyApplied = appsRes.data.some(
+          (app: any) => Number(app.job_id) === jobIdNum || Number(app.job?.id) === jobIdNum
+        );
+        setApplied(alreadyApplied);
+      } catch {}
+      setLoading(false);
+    };
+    load();
   }, [id]);
 
   const handleApply = async () => {
+    if (applied) return;
     setApplying(true);
+    setApplyError('');
     try {
       await applyJob({ job_id: Number(id), cover_letter: '' });
-      Alert.alert('Success', 'Application submitted!');
+      setApplied(true);
     } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.non_field_errors?.[0] || 'Already applied or error occurred');
+      const msg = e.response?.data?.non_field_errors?.[0] || e.response?.data?.detail || 'Failed to apply. Please try again.';
+      if (msg.toLowerCase().includes('already')) {
+        setApplied(true); // already applied — treat as success
+      } else {
+        setApplyError(msg);
+      }
     }
     setApplying(false);
   };
@@ -77,6 +102,14 @@ export default function JobDetailScreen() {
           ) : null}
         </View>
 
+        {/* Expired banner — shown if deadline passed */}
+        {job.deadline && new Date(job.deadline) < new Date(new Date().toDateString()) && (
+          <View style={styles.expiredBanner}>
+            <Ionicons name="time-outline" size={16} color="#ef4444" />
+            <Text style={styles.expiredText}>⏰ This job's deadline has passed. Applications may no longer be accepted.</Text>
+          </View>
+        )}
+
         {/* Description */}
         <View style={styles.descCard}>
           <Text style={styles.descTitle}>Job Description</Text>
@@ -84,10 +117,33 @@ export default function JobDetailScreen() {
         </View>
 
         {user?.role === 'jobseeker' && (
-          <TouchableOpacity style={styles.applyBtn} onPress={handleApply} disabled={applying}>
-            <Ionicons name="send-outline" size={18} color="#fff" />
-            <Text style={styles.applyBtnText}>{applying ? 'Applying...' : 'Apply Now'}</Text>
-          </TouchableOpacity>
+          <View>
+            {applyError ? (
+              <View style={styles.applyError}>
+                <Ionicons name="alert-circle-outline" size={15} color="#ef4444" />
+                <Text style={styles.applyErrorText}>{applyError}</Text>
+              </View>
+            ) : null}
+            {applied ? (
+              <View style={styles.appliedBanner}>
+                <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+                <Text style={styles.appliedText}>Application Submitted Successfully!</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.applyBtn, applying && { opacity: 0.7 }]}
+                onPress={handleApply}
+                disabled={applying}>
+                {applying
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <>
+                      <Ionicons name="send-outline" size={18} color="#fff" />
+                      <Text style={styles.applyBtnText}>Apply Now</Text>
+                    </>
+                }
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </ScrollView>
     </View>
@@ -128,6 +184,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
     borderWidth: 1, borderColor: 'rgba(124,58,237,0.07)',
   },
+  expiredBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#fee2e2', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#fca5a5' },
+  expiredText:   { flex: 1, fontSize: 13, color: '#ef4444', fontWeight: '600', lineHeight: 18 },
   infoLabel: { fontSize: 10, color: C.textSub, fontWeight: '600', textTransform: 'uppercase' },
   infoValue: { fontSize: 13, fontWeight: '700', color: C.text, textAlign: 'center' },
   descCard: {
@@ -143,4 +201,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
   applyBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  appliedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#dcfce7', borderRadius: 12, padding: 16,
+    borderWidth: 1, borderColor: '#86efac',
+  },
+  appliedText: { color: '#16a34a', fontSize: 15, fontWeight: '700', flex: 1 },
+  applyError: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#fee2e2', borderRadius: 10, padding: 12,
+    marginBottom: 10, borderWidth: 1, borderColor: '#fca5a5',
+  },
+  applyErrorText: { flex: 1, color: '#ef4444', fontSize: 13, fontWeight: '600' },
 });

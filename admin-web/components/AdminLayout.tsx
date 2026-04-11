@@ -15,16 +15,24 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false); // sidebar closed by default
+  const [open, setOpen]       = useState(false);
+  const [checked, setChecked] = useState(false); // token check done
 
   useEffect(() => {
-    if (!localStorage.getItem('admin_token')) router.replace('/');
+    if (!localStorage.getItem('admin_token')) {
+      router.replace('/');
+    } else {
+      setChecked(true);
+    }
   }, []);
 
   const logout = () => {
     localStorage.removeItem('admin_token');
     router.replace('/');
   };
+
+  // Don't render children until we've confirmed the token exists
+  if (!checked) return null;
 
   return (
     <div style={st.shell}>
@@ -202,5 +210,5 @@ const st: Record<string, React.CSSProperties> = {
     background: '#fff', borderRadius: 20, padding: '3px 12px',
   },
 
-  main: { flex: 1, padding: '24px 60px', overflowY: 'auto', maxWidth: 1200 },
+  main: { flex: 1, padding: '24px 20px', overflowY: 'auto', maxWidth: 1200 },
 };

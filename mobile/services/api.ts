@@ -1,8 +1,16 @@
 import axios from 'axios';
 import { getItem } from '../utils/storage';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// web/desktop: 127.0.0.1 | Android emulator: 10.0.2.2 | real device: your LAN IP e.g. 192.168.x.x
-const BASE_URL = 'http://127.0.0.1:8000/api';
+// Use environment variable for deployed backend, fallback to localhost for dev
+const DEPLOYED_API = process.env.EXPO_PUBLIC_API_URL;
+
+const BASE_URL = DEPLOYED_API
+  ? DEPLOYED_API
+  : Platform.OS === 'android'
+    ? 'http://10.0.2.2:8000/api'   // Android emulator → host machine
+    : 'http://127.0.0.1:8000/api'; // web browser dev
 
 const api = axios.create({ baseURL: BASE_URL });
 
@@ -16,6 +24,10 @@ api.interceptors.request.use(async (config) => {
 export const register = (data: object) => api.post('/auth/register/', data);
 export const login = (data: object) => api.post('/token/', data);
 export const getProfile = () => api.get('/auth/profile/');
+export const sendVerificationOTP = () => api.post('/auth/send-otp/');
+export const verifyEmailOTP = (otp: string) => api.post('/auth/verify-otp/', { otp });
+export const requestPasswordReset = (email: string) => api.post('/auth/password-reset/request/', { email });
+export const confirmPasswordReset = (data: object) => api.post('/auth/password-reset/confirm/', data);
 export const updateProfile = (data: object) => api.patch('/auth/profile/', data);
 
 // Jobs
@@ -27,6 +39,9 @@ export const deleteJob = (id: number) => api.delete(`/jobs/${id}/delete/`);
 export const getMyJobs = () => api.get('/jobs/my-jobs/');
 export const payJobFee = (id: number, data: object) => api.post(`/jobs/${id}/pay-fee/`, data);
 export const confirmJobPayment = (id: number, data: object) => api.post(`/jobs/${id}/confirm-payment/`, data);
+export const requestDeadlineExtend = (id: number, data: object) => api.post(`/jobs/${id}/request-extend/`, data);
+export const payExtendFee = (id: number, data: object) => api.post(`/jobs/${id}/pay-extend/`, data);
+export const confirmExtendPayment = (id: number, data: object) => api.post(`/jobs/${id}/confirm-extend/`, data);
 
 // Applications
 export const applyJob = (data: object) => api.post('/applications/apply/', data);

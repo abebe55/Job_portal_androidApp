@@ -1,13 +1,14 @@
 from django.urls import path
 from .views import (
     MyWalletView, InitiateDepositView, ChapaCallbackView,
-    ChapaVerifyView, DeductCommissionView,
+    ChapaVerifyView, DeductCommissionView, DepositReturnView,
     AdminCommissionSettingView, AdminAllTransactionsView, AdminAllWalletsView,
 )
 
 urlpatterns = [
     path('', MyWalletView.as_view(), name='my-wallet'),
     path('deposit/', InitiateDepositView.as_view(), name='initiate-deposit'),
+    path('deposit-return/', DepositReturnView.as_view(), name='deposit-return'),
     path('chapa/callback/', ChapaCallbackView.as_view(), name='chapa-callback'),
     path('chapa/verify/', ChapaVerifyView.as_view(), name='chapa-verify'),
     path('deduct/', DeductCommissionView.as_view(), name='deduct-commission'),

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getProfile } from '../services/api';
 
 export default function EmployerPendingScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const router = useRouter();
   const [checking, setChecking] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -18,7 +18,9 @@ export default function EmployerPendingScreen() {
       const res = await getProfile();
       if (res.data?.is_approved) {
         clearInterval(intervalRef.current!);
-        router.replace('/(tabs)/');
+        // Update context so AuthGuard sees is_approved=true and doesn't redirect back
+        await refreshUser();
+        // AuthGuard will now redirect to /(tabs)/ automatically
       }
     } catch {}
     finally { setChecking(false); }

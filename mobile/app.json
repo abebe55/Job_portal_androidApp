@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "scheme": "jobportal",
     "orientation": "portrait",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "web": {
       "bundler": "metro",
       "output": "single"

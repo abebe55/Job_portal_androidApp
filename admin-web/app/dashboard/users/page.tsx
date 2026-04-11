@@ -18,7 +18,7 @@ export default function UsersPage() {
   const [success, setSuccess]   = useState('');
   const [error, setError]       = useState('');
   const [editUser, setEditUser] = useState<any | null>(null);
-  const [editForm, setEditForm] = useState({ phone: '', location: '', role: '', bio: '' });
+  const [editForm, setEditForm] = useState({ username: '', email: '', phone: '', location: '', role: '', bio: '' });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -59,7 +59,7 @@ export default function UsersPage() {
 
   const openEdit = (u: any) => {
     setEditUser(u);
-    setEditForm({ phone: u.phone || '', location: u.location || '', role: u.role || '', bio: u.bio || '' });
+    setEditForm({ username: u.username || '', email: u.email || '', phone: u.phone || '', location: u.location || '', role: u.role || '', bio: u.bio || '' });
   };
 
   const handleEditSave = async () => {
@@ -256,6 +256,8 @@ export default function UsersPage() {
 
             <div style={s.modalBody}>
               {[
+                { label: 'Username', key: 'username', placeholder: 'e.g. john_doe' },
+                { label: 'Email', key: 'email', placeholder: 'e.g. user@example.com' },
                 { label: 'Phone', key: 'phone', placeholder: 'e.g. +251911234567' },
                 { label: 'Location', key: 'location', placeholder: 'e.g. Addis Ababa' },
                 { label: 'Bio', key: 'bio', placeholder: 'Short bio...' },
@@ -265,7 +267,8 @@ export default function UsersPage() {
                   <input style={s.formInput}
                     value={(editForm as any)[f.key]}
                     onChange={e => setEditForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder} />
+                    placeholder={f.placeholder}
+                    type={f.key === 'email' ? 'email' : 'text'} />
                 </div>
               ))}
 

@@ -190,7 +190,32 @@ function CVPanel({ cv }: { cv: any }) {
       <Sec title="Languages" color="#16a34a">
         <InfoRow icon="chatbubble-outline" label="Amharic" value={cv.amharic_level || 'Native'} />
         <InfoRow icon="chatbubble-outline" label="English" value={cv.english_level} />
-        <InfoRow icon="globe-outline" label="Other" value={cv.other_languages} />
+        {(() => {
+          let langList: any[] = [];
+          try { if (cv.other_languages) langList = JSON.parse(cv.other_languages); } catch {}
+          if (!langList.length) return null;
+          const LANG_COLOR: any = { 'Native':'#16a34a','Excellent':'#2563eb','Very Good':'#7c3aed','Good':'#d97706','Fair':'#6b7280','Basic':'#9ca3af' };
+          return langList.map((lang: any, i: number) => (
+            <View key={i} style={s.langCard}>
+              <View style={s.langHead}>
+                <Text style={s.langName}>{lang.name || '—'}</Text>
+                {lang.native && <View style={s.nativePill}><Text style={s.nativeTxt}>Native</Text></View>}
+              </View>
+              {(['reading','writing','speaking','listening'] as const).map(sk => {
+                const val = lang[sk];
+                const col = val ? (LANG_COLOR[val] || '#6b7280') : C.textSub;
+                const ICONS: any = { reading:'📖', writing:'✏️', speaking:'🗣️', listening:'👂' };
+                return (
+                  <View key={sk} style={s.langRow}>
+                    <Text style={s.langIcon}>{ICONS[sk]}</Text>
+                    <Text style={s.langLbl}>{sk.charAt(0).toUpperCase() + sk.slice(1)}</Text>
+                    <Text style={[s.langVal, { color: col }]}>{val || '—'}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ));
+        })()}
       </Sec>
 
       {/* Experience */}
@@ -354,10 +379,38 @@ export default function JobApplicantsScreen() {
               {/* Full CV — expanded */}
               {isOpen && <CVPanel cv={cv} />}
 
-              {/* Action button */}
-              <TouchableOpacity style={s.actionBtn} onPress={() => { setSelected(item); setNote(item.employer_note || ''); }}>
-                <Ionicons name="create-outline" size={15} color={C.primary} />
-                <Text style={s.actionBtnTxt}>Update Status</Text>
+              {/* Action button — shows current status */}
+              <TouchableOpacity
+                style={[s.actionBtn, {
+                  backgroundColor:
+                    item.status === 'accepted' ? '#dcfce7' :
+                    item.status === 'rejected' ? '#fee2e2' :
+                    item.status === 'reviewed' ? '#dbeafe' : C.primaryLight
+                }]}
+                onPress={() => { setSelected(item); setNote(item.employer_note || ''); }}>
+                <Ionicons
+                  name={
+                    item.status === 'accepted' ? 'checkmark-circle' :
+                    item.status === 'rejected' ? 'close-circle' :
+                    item.status === 'reviewed' ? 'eye' : 'create-outline'
+                  }
+                  size={15}
+                  color={
+                    item.status === 'accepted' ? '#16a34a' :
+                    item.status === 'rejected' ? '#ef4444' :
+                    item.status === 'reviewed' ? '#2563eb' : C.primary
+                  }
+                />
+                <Text style={[s.actionBtnTxt, {
+                  color:
+                    item.status === 'accepted' ? '#16a34a' :
+                    item.status === 'rejected' ? '#ef4444' :
+                    item.status === 'reviewed' ? '#2563eb' : C.primary
+                }]}>
+                  {item.status === 'accepted' ? '✓ Accepted' :
+                   item.status === 'rejected' ? '✕ Rejected' :
+                   item.status === 'reviewed' ? '👁 Reviewed' : 'Update Status'}
+                </Text>
               </TouchableOpacity>
             </View>
           );
@@ -383,14 +436,31 @@ export default function JobApplicantsScreen() {
             multiline numberOfLines={3} placeholderTextColor={C.textSub}
           />
           <View style={s.modalBtns}>
-            <TouchableOpacity style={s.reviewBtn} disabled={acting} onPress={() => handleAction(selected.id, 'reviewed')}>
-              <Text style={s.reviewBtnTxt}>Reviewed</Text>
+            <TouchableOpacity
+              style={[s.reviewBtn, selected?.status === 'reviewed' && { backgroundColor: '#2563eb' }]}
+              disabled={acting}
+              onPress={() => handleAction(selected.id, 'reviewed')}>
+              <Text style={[s.reviewBtnTxt, selected?.status === 'reviewed' && { color: '#fff' }]}>
+                {selected?.status === 'reviewed' ? '✓ Reviewed' : 'Reviewed'}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.acceptBtn} disabled={acting} onPress={() => handleAction(selected.id, 'accepted')}>
-              {acting ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.acceptBtnTxt}>Accept</Text>}
+            <TouchableOpacity
+              style={[s.acceptBtn, selected?.status === 'accepted' && { opacity: 0.7 }]}
+              disabled={acting}
+              onPress={() => handleAction(selected.id, 'accepted')}>
+              {acting ? <ActivityIndicator color="#fff" size="small" /> :
+                <Text style={s.acceptBtnTxt}>
+                  {selected?.status === 'accepted' ? '✓ Accepted' : 'Accept'}
+                </Text>
+              }
             </TouchableOpacity>
-            <TouchableOpacity style={s.rejectBtn} disabled={acting} onPress={() => handleAction(selected.id, 'rejected')}>
-              <Text style={s.rejectBtnTxt}>Reject</Text>
+            <TouchableOpacity
+              style={[s.rejectBtn, selected?.status === 'rejected' && { opacity: 0.7 }]}
+              disabled={acting}
+              onPress={() => handleAction(selected.id, 'rejected')}>
+              <Text style={s.rejectBtnTxt}>
+                {selected?.status === 'rejected' ? '✕ Rejected' : 'Reject'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -457,6 +527,16 @@ const s = StyleSheet.create({
   imgModalBg:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
   imgModalImg:   { width: '95%', height: '80%', borderRadius: 12 },
   imgModalHint:  { color: 'rgba(255,255,255,0.6)', marginTop: 12, fontSize: 13 },
+  // Language cards
+  langCard:      { backgroundColor: '#f9fafb', borderRadius: 10, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  langHead:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.border },
+  langName:      { fontSize: 15, fontWeight: '800', color: C.text, flex: 1 },
+  nativePill:    { backgroundColor: '#dcfce7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  nativeTxt:     { fontSize: 11, color: '#16a34a', fontWeight: '700' },
+  langRow:       { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 3 },
+  langIcon:      { fontSize: 13, width: 18 },
+  langLbl:       { fontSize: 13, color: C.textSub, fontWeight: '600', flex: 1 },
+  langVal:       { fontSize: 13, fontWeight: '700' },
   // Modal
   modalBg:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   modalSheet:    { backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 },

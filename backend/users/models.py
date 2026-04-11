@@ -1,5 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import random
+import string
+
+
+def generate_otp():
+    return ''.join(random.choices(string.digits, k=6))
+
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -15,9 +22,28 @@ class User(AbstractUser):
     preferred_language = models.CharField(max_length=10, default='en')
     is_approved = models.BooleanField(default=True)
     is_suspended = models.BooleanField(default=False)
+    # Email verification
+    email_verified = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
+
+
+class EmailVerificationOTP(models.Model):
+    """6-digit OTP for email verification during registration."""
+    user      = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otps')
+    otp       = models.CharField(max_length=6)
+    email     = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    verified  = models.BooleanField(default=False)
+
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"OTP for {self.email}"
 
 
 class EmployerVerification(models.Model):

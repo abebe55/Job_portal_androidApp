@@ -9,6 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { C } from '../../constants/theme';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 // ── Employer types with their required docs ───────────────────────────────────
 const EMPLOYER_TYPES = [
@@ -204,6 +205,7 @@ function UploadBtn({ docKey, files, setFiles }: { docKey: string; files: any; se
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function RegisterScreen() {
   const router = useRouter();
+  const { login } = useAuth();
 
   // Step: 'role' | 'basic' | 'employer_type' | 'employer_docs'
   const [step, setStep]           = useState<'role' | 'basic' | 'employer_type' | 'employer_docs'>('role');
@@ -309,10 +311,14 @@ export default function RegisterScreen() {
 
       setSuccess(
         role === 'employer'
-          ? 'Account created! Your documents are under review. You will be notified once approved.'
-          : 'Account created! Redirecting to login...'
+          ? 'Account created! Please verify your email before your documents are reviewed.'
+          : 'Account created! Please check your email for the OTP verification code.'
       );
-      setTimeout(() => router.replace('/(auth)/login'), 2200);
+      // Auto-login for both roles so verify-email screen has a valid token
+      try {
+        await login(form.username.trim(), form.password);
+      } catch {}
+      setTimeout(() => router.replace('/(auth)/verify-email'), 800);
     } catch (e: any) {
       const d = e?.response?.data;
       setError(
@@ -554,7 +560,7 @@ export default function RegisterScreen() {
                         const formatted = digits.replace(/(.{4})/g, '$1 ').trim();
                         setNationalIdNo(formatted);
                       }}
-                      placeholderTextColor={C.textSub} autoCapitalize="characters" />
+                      placeholderTextColor={C.textSub} keyboardType="numeric" />
                   </View>
                 </View>
               );
@@ -586,7 +592,7 @@ export default function RegisterScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   page:       { flex: 1, backgroundColor: C.bg },
-  scroll:     { paddingBottom: 48, paddingHorizontal: 0 },
+  scroll:     { paddingBottom: 48, paddingHorizontal: 0, alignItems: Platform.OS === 'web' ? 'center' : undefined },
   scrollCenter: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
 
   topBanner:  { backgroundColor: C.primary, alignItems: 'center', paddingTop: 28, paddingBottom: 20 },
@@ -605,7 +611,8 @@ const s = StyleSheet.create({
   card: {
     backgroundColor: '#fff', borderRadius: 16,
     marginHorizontal: 16, marginTop: 12, padding: 24,
-    width: 'auto',
+    width: Platform.OS === 'web' ? 480 : 'auto',
+    maxWidth: '100%',
     shadowColor: C.primary, shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12, shadowRadius: 24, elevation: 8,
   },

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { getJobs, getMyJobs } from '../../services/api';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +12,7 @@ import { C, S } from '../../constants/theme';
 function EmployerHome() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [myJobs, setMyJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,34 +25,41 @@ function EmployerHome() {
   const totalApplicants = myJobs.reduce((s, j) => s + (j.applications?.length ?? 0), 0);
 
   const quickActions = [
-    { icon: 'add-circle-outline',  label: 'Post a Job',      path: '/post-job',  color: '#2563eb', bg: '#dbeafe' },
-    { icon: 'list-outline',        label: 'My Posted Jobs',  path: '/my-jobs',   color: '#7c3aed', bg: '#ede9fe' },
-    { icon: 'wallet-outline',      label: 'My Wallet',       path: '/wallet',    color: '#16a34a', bg: '#dcfce7' },
-    { icon: 'people-outline',      label: 'Applicants',      path: '/my-jobs',   color: '#d97706', bg: '#fef3c7' },
+    { icon: 'add-circle-outline',  label: t('postJob'),       path: '/post-job',  color: '#2563eb' },
+    { icon: 'list-outline',        label: t('myPostedJobs'),  path: '/my-jobs',   color: '#7c3aed' },
+    { icon: 'wallet-outline',      label: t('myWallet'),      path: '/wallet',    color: '#16a34a' },
+    { icon: 'people-outline',      label: t('applicants'),    path: '/my-jobs',   color: '#d97706' },
   ];
+
+  const STATUS_LABELS: any = {
+    draft:           { color: '#6b7280', bg: '#f3f4f6', label: t('pendingReview') },
+    under_review:    { color: '#2563eb', bg: '#dbeafe', label: t('underReview') },
+    approved:        { color: '#d97706', bg: '#fef3c7', label: t('approvedPayFee') },
+    payment_pending: { color: '#7c3aed', bg: '#ede9fe', label: t('paymentPending') },
+    published:       { color: '#16a34a', bg: '#dcfce7', label: t('jobPublishedStatus') },
+    rejected:        { color: '#ef4444', bg: '#fee2e2', label: t('rejected') },
+  };
 
   return (
     <View style={S.page}>
-      <PageHeader title="Employer Dashboard" />
+      <PageHeader title={t('employerDashboard')} />
       <ScrollView contentContainerStyle={styles.empScroll} showsVerticalScrollIndicator={false}>
 
-        {/* Welcome */}
         <View style={styles.welcomeCard}>
           <View style={styles.welcomeLeft}>
-            <Text style={styles.welcomeHi}>Hello, {user?.username}</Text>
-            <Text style={styles.welcomeSub}>Manage your jobs and find the right talent</Text>
+            <Text style={styles.welcomeHi}>{t('hello')}, {user?.username}</Text>
+            <Text style={styles.welcomeSub}>{t('manageJobs')}</Text>
           </View>
           <View style={styles.welcomeIcon}>
             <Ionicons name="business" size={28} color="#2563eb" />
           </View>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Published',  value: published,       color: '#16a34a', bg: '#dcfce7' },
-            { label: 'Pending',    value: pending,         color: '#d97706', bg: '#fef3c7' },
-            { label: 'Applicants', value: totalApplicants, color: '#7c3aed', bg: '#ede9fe' },
+            { label: t('published'),  value: published,       color: '#16a34a' },
+            { label: t('pending'),    value: pending,         color: '#d97706' },
+            { label: t('applicants'), value: totalApplicants, color: '#7c3aed' },
           ].map(s => (
             <View key={s.label} style={styles.statCard}>
               <Text style={[styles.statNum, { color: s.color }]}>{loading ? '—' : s.value}</Text>
@@ -59,13 +68,11 @@ function EmployerHome() {
           ))}
         </View>
 
-        {/* Quick actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
         <View style={styles.actionsGrid}>
           <View style={styles.actionsRow}>
             {quickActions.slice(0, 2).map(a => (
-              <TouchableOpacity key={a.path + a.label} style={styles.actionCard}
-                onPress={() => router.push(a.path as any)}>
+              <TouchableOpacity key={a.label} style={styles.actionCard} onPress={() => router.push(a.path as any)}>
                 <View style={styles.actionIcon}>
                   <Ionicons name={a.icon as any} size={24} color={a.color} />
                 </View>
@@ -75,8 +82,7 @@ function EmployerHome() {
           </View>
           <View style={styles.actionsRow}>
             {quickActions.slice(2, 4).map(a => (
-              <TouchableOpacity key={a.path + a.label} style={styles.actionCard}
-                onPress={() => router.push(a.path as any)}>
+              <TouchableOpacity key={a.label} style={styles.actionCard} onPress={() => router.push(a.path as any)}>
                 <View style={styles.actionIcon}>
                   <Ionicons name={a.icon as any} size={24} color={a.color} />
                 </View>
@@ -86,33 +92,23 @@ function EmployerHome() {
           </View>
         </View>
 
-        {/* Recent jobs */}
-        <Text style={styles.sectionTitle}>Recent Job Posts</Text>
+        <Text style={styles.sectionTitle}>{t('recentJobPosts')}</Text>
         {loading ? (
           <ActivityIndicator color={C.primary} style={{ marginTop: 20 }} />
         ) : myJobs.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="briefcase-outline" size={36} color={C.border} />
-            <Text style={styles.emptyText}>No jobs posted yet.</Text>
+            <Text style={styles.emptyText}>{t('noJobsPosted')}</Text>
             <TouchableOpacity style={styles.postBtn} onPress={() => router.push('/post-job')}>
               <Ionicons name="add" size={16} color="#fff" />
-              <Text style={styles.postBtnText}>Post Your First Job</Text>
+              <Text style={styles.postBtnText}>{t('postYourFirstJob')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           myJobs.slice(0, 5).map(job => {
-            const STATUS: any = {
-              draft:           { color: '#6b7280', bg: '#f3f4f6', label: 'Pending Review' },
-              under_review:    { color: '#2563eb', bg: '#dbeafe', label: 'Under Review' },
-              approved:        { color: '#d97706', bg: '#fef3c7', label: 'Approved' },
-              payment_pending: { color: '#7c3aed', bg: '#ede9fe', label: 'Pay Fee' },
-              published:       { color: '#16a34a', bg: '#dcfce7', label: 'Published' },
-              rejected:        { color: '#ef4444', bg: '#fee2e2', label: 'Rejected' },
-            };
-            const st = STATUS[job.status] || STATUS.draft;
+            const st = STATUS_LABELS[job.status] || STATUS_LABELS.draft;
             return (
-              <TouchableOpacity key={job.id} style={styles.jobRow}
-                onPress={() => router.push('/my-jobs')}>
+              <TouchableOpacity key={job.id} style={styles.jobRow} onPress={() => router.push('/my-jobs')}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.jobRowTitle} numberOfLines={1}>{job.title}</Text>
                   <Text style={styles.jobRowMeta}>{job.location} · {job.industry}</Text>
@@ -127,10 +123,9 @@ function EmployerHome() {
 
         {myJobs.length > 5 && (
           <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/my-jobs')}>
-            <Text style={styles.viewAllText}>View All Jobs →</Text>
+            <Text style={styles.viewAllText}>{t('viewAllJobs')}</Text>
           </TouchableOpacity>
         )}
-
       </ScrollView>
     </View>
   );
@@ -142,6 +137,7 @@ function SeekerHome() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const fetchJobs = async () => {
     try { const res = await getJobs(); setJobs(res.data); } catch {}
@@ -152,7 +148,7 @@ function SeekerHome() {
 
   if (loading) return (
     <View style={S.page}>
-      <PageHeader title="Latest Jobs" />
+      <PageHeader title={t('latestJobs')} />
       <ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} />
     </View>
   );
@@ -161,7 +157,7 @@ function SeekerHome() {
 
   return (
     <View style={S.page}>
-      <PageHeader title="Latest Jobs" />
+      <PageHeader title={t('latestJobs')} />
       <FlatList
         data={jobs}
         keyExtractor={item => item.id.toString()}
@@ -196,7 +192,7 @@ function SeekerHome() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="briefcase-outline" size={48} color={C.border} />
-            <Text style={styles.emptyText}>No jobs available yet.</Text>
+            <Text style={styles.emptyText}>{t('noJobsAvailable')}</Text>
           </View>
         }
       />
@@ -236,33 +232,19 @@ const styles = StyleSheet.create({
   welcomeHi:    { fontSize: 15, fontWeight: '800', color: C.text, marginBottom: 2 },
   welcomeSub:   { fontSize: 12, color: C.textSub, fontWeight: '600' },
   welcomeIcon:  { width: 44, height: 44, borderRadius: 12, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center' },
-
   statsRow:     { flexDirection: 'row', gap: 10, marginBottom: 16 },
   statCard:     { flex: 1, backgroundColor: C.white, borderRadius: 12, padding: 12, alignItems: 'center', shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: 'rgba(124,58,237,0.07)' },
   statNum:      { fontSize: 20, fontWeight: '800', marginBottom: 2 },
   statLabel:    { fontSize: 11, color: C.textSub, fontWeight: '700' },
-
   sectionTitle: { fontSize: 12, fontWeight: '800', color: C.textSub, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 },
   actionsGrid:  { flexDirection: 'column', gap: 10, marginBottom: 18 },
   actionsRow:   { flexDirection: 'row', gap: 10 },
-  actionCard:   {
-    flex: 1, borderRadius: 14, padding: 16, alignItems: 'center', gap: 8,
-    backgroundColor: '#ffffff',
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.13,
-    shadowRadius: 14,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(124,58,237,0.08)',
-  },
+  actionCard:   { flex: 1, borderRadius: 14, padding: 16, alignItems: 'center', gap: 8, backgroundColor: '#ffffff', shadowColor: '#7c3aed', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 14, elevation: 6, borderWidth: 1, borderColor: 'rgba(124,58,237,0.08)' },
   actionIcon:   { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f3ff' },
   actionLabel:  { fontSize: 13, fontWeight: '800', textAlign: 'center', color: C.text },
-
   emptyCard:    { backgroundColor: '#fff', borderRadius: 14, padding: 28, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: C.border },
   postBtn:      { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primary, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, marginTop: 4 },
   postBtnText:  { color: '#fff', fontWeight: '700', fontSize: 13 },
-
   jobRow:       { ...S.card, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
   jobRowTitle:  { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 2 },
   jobRowMeta:   { fontSize: 12, color: C.textSub },
