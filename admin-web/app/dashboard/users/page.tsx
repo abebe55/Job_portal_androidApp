@@ -37,7 +37,7 @@ export default function UsersPage() {
   const notify = (msg: string) => setSuccess(msg);
   const fail   = (msg: string) => setError(msg);
 
-  const act = async (id: number, fn: () => Promise<void>, msg: string) => {
+  const act = async (id: number, fn: () => Promise<any>, msg: string) => {
     setActing(id);
     try { await fn(); notify(msg); fetchUsers(); }
     catch (e: any) { fail(e?.response?.data?.detail || 'Action failed.'); }
