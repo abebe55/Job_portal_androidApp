@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1012802420563",
+    "project_id": "localjobportal5",
+    "storage_bucket": "localjobportal5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012802420563:android:8f09100ef67fc805b1eba6",
+        "android_client_info": {
+          "package_name": "com.example.localjobportal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfDP-FTuW_tL4Bs80HUjvDpvaN1S9FmEo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012802420563:android:5afaf86c0afad030b1eba6",
+        "android_client_info": {
+          "package_name": "com.example.localjobportal.adapters"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfDP-FTuW_tL4Bs80HUjvDpvaN1S9FmEo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
