@@ -10,6 +10,7 @@ import PageHeader from '../../components/PageHeader';
 import { C, S } from '../../constants/theme';
 
 const BASE = 'http://127.0.0.1:8000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL?.replace('/api', '') || BASE;
 const STATUS: any = {
   pending:  { color: '#d97706', bg: '#fef3c7', icon: 'time-outline',             label: 'Pending' },
   reviewed: { color: '#2563eb', bg: '#dbeafe', icon: 'eye-outline',              label: 'Reviewed' },

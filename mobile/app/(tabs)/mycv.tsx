@@ -10,6 +10,7 @@ import PageHeader from '../../components/PageHeader';
 import { C, S } from '../../constants/theme';
 
 const BASE = 'http://127.0.0.1:8000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL?.replace('/api', '') || BASE;
 
 function Toast({ visible, type, message }: { visible: boolean; type: 'success'|'error'; message: string }) {
   const opacity = useRef(new Animated.Value(0)).current;

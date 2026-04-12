@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminLogin } from '../lib/api';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +42,7 @@ export default function LoginPage() {
     e.preventDefault();
     setResetErr(''); setResetLoading(true);
     try {
-      await fetch('http://127.0.0.1:8000/api/auth/password-reset/request/', {
+      await fetch(`${API_URL}/auth/password-reset/request/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail }),
@@ -58,7 +60,7 @@ export default function LoginPage() {
     if (resetNewPass !== resetConfirmPass) { setResetErr('Passwords do not match.'); return; }
     setResetLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/auth/password-reset/confirm/', {
+      const res = await fetch(`${API_URL}/auth/password-reset/confirm/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail, otp: resetOtp, new_password: resetNewPass }),
@@ -115,7 +117,7 @@ export default function LoginPage() {
                   onClick={async () => {
                     setResetMsg(''); setResetErr('');
                     try {
-                      await fetch('http://127.0.0.1:8000/api/auth/password-reset/request/', {
+                      await fetch(`${API_URL}/auth/password-reset/request/`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: resetEmail }),
                       });
