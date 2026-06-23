@@ -1,32 +1,42 @@
 """
-Centralized email service for JobPortal.
+Centralized email service for JobPortal — powered by Brevo (sib-api-v3-sdk).
 All emails are sent non-blocking (errors are logged, never crash the request).
 """
 import logging
-from django.core.mail import send_mail
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-FROM = getattr(settings, 'DEFAULT_FROM_EMAIL', 'JobPortal <noreply@jobportal.et>')
+
+def _get_api_instance():
+    """Return a configured Brevo TransactionalEmailsApi instance."""
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = settings.BREVO_API_KEY
+    client = sib_api_v3_sdk.ApiClient(configuration)
+    return sib_api_v3_sdk.TransactionalEmailsApi(client)
 
 
 def _send(to: str, subject: str, html: str) -> bool:
-    """Send a single email. Returns True on success, False on failure."""
+    """Send a single transactional email via Brevo. Returns True on success."""
     if not to or not to.strip():
         return False
     try:
-        send_mail(
+        api_instance = _get_api_instance()
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+            sender={"name": settings.BREVO_SENDER_NAME, "email": settings.BREVO_SENDER_EMAIL},
+            to=[{"email": to}],
             subject=subject,
-            message='',          # plain text fallback (empty)
-            from_email=FROM,
-            recipient_list=[to],
-            html_message=html,
-            fail_silently=False,
+            html_content=html,
         )
+        api_instance.send_transac_email(send_smtp_email)
         return True
+    except ApiException as e:
+        logger.error(f'[Brevo] API error sending "{subject}" to {to}: {e}')
+        return False
     except Exception as e:
-        logger.error(f'[Email] Failed to send "{subject}" to {to}: {e}')
+        logger.error(f'[Brevo] Failed to send "{subject}" to {to}: {e}')
         return False
 
 
@@ -97,7 +107,7 @@ def send_job_submitted(email: str, username: str, job_title: str) -> bool:
 
 
 def send_job_approved(email: str, username: str, job_title: str, fee: str) -> bool:
-    return _send(email, f'✅ Job Approved — Pay Fee to Publish', f"""
+    return _send(email, '✅ Job Approved — Pay Fee to Publish', f"""
     <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f0fdf4;border-radius:16px">
       <h2 style="color:#16a34a">Job Approved!</h2>
       <p style="color:#374151">Hello <strong>{username}</strong>,</p>
