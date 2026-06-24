@@ -37,19 +37,33 @@ class PasswordResetRequestView(APIView):
         otp = generate_otp()
         expires = timezone.now() + timedelta(minutes=15)
 
+        # Invalidate old unverified password_reset OTPs for this user
         otp_col.update_many(
-            {'user_id': user_doc['id'], 'otp_type': 'password_reset', 'verified': False},
+            {'$or': [
+                {'user_id': user_doc['id'],     'otp_type': 'password_reset', 'verified': False},
+                {'user_id': str(user_doc['id']), 'otp_type': 'password_reset', 'verified': False},
+            ]},
             {'$set': {'verified': True}}
         )
-        otp_col.insert_one({
-            'user_id': user_doc['id'],
-            'otp': otp,
-            'email': email,
-            'otp_type': 'password_reset',
-            'verified': False,
-            'created_at': timezone.now(),
-            'expires_at': expires,
-        })
+
+        # Use Django ORM so otp_type is stored consistently via the model
+        try:
+            user_obj = User.objects.get(id=user_doc['id'])
+            EmailVerificationOTP.objects.create(
+                user=user_obj, otp=otp, email=email,
+                otp_type='password_reset', expires_at=expires
+            )
+        except User.DoesNotExist:
+            # Fallback: raw insert if ORM lookup fails
+            otp_col.insert_one({
+                'user_id': user_doc['id'],
+                'otp': otp,
+                'email': email,
+                'otp_type': 'password_reset',
+                'verified': False,
+                'created_at': timezone.now(),
+                'expires_at': expires,
+            })
 
         try:
             send_email_verification_otp(email, user_doc.get('username', ''), otp)
@@ -86,7 +100,10 @@ class PasswordResetConfirmView(APIView):
             return Response({'error': 'Invalid OTP.'}, status=400)
 
         otp_doc = otp_col.find_one(
-            {'user_id': user_doc['id'], 'otp': otp_input, 'otp_type': 'password_reset', 'verified': False},
+            {'$or': [
+                {'user_id': user_doc['id'],      'otp': otp_input, 'otp_type': 'password_reset', 'verified': False},
+                {'user_id': str(user_doc['id']), 'otp': otp_input, 'otp_type': 'password_reset', 'verified': False},
+            ]},
             sort=[('created_at', -1)]
         )
         if not otp_doc:
@@ -383,16 +400,15 @@ class SendVerificationOTPView(APIView):
 
         col = self._get_otp_collection()
 
-        # If a valid OTP was sent in the last 60 seconds, don't create a new one
-        from datetime import timezone as dt_tz, datetime as dt
+        # If a valid email_verification OTP was sent in the last 60 seconds, don't create a new one
         now = timezone.now()
         cutoff = now - timedelta(seconds=60)
-        cutoff_naive = cutoff.replace(tzinfo=None)  # MongoDB stores naive
+        cutoff_naive = cutoff.replace(tzinfo=None)  # MongoDB stores naive datetimes
 
         recent = col.find_one({
             '$or': [
-                {'user_id': user.id, 'verified': False},
-                {'user_id': str(user.id), 'verified': False},
+                {'user_id': user.id,       'otp_type': 'email_verification', 'verified': False},
+                {'user_id': str(user.id),  'otp_type': 'email_verification', 'verified': False},
             ],
             'created_at': {'$gte': cutoff_naive}
         })
@@ -403,17 +419,18 @@ class SendVerificationOTPView(APIView):
         otp = generate_otp()
         expires = now + timedelta(minutes=15)
 
-        # Invalidate old unverified OTPs
+        # Invalidate old unverified email_verification OTPs only
         col.update_many(
             {'$or': [
-                {'user_id': user.id, 'verified': False},
-                {'user_id': str(user.id), 'verified': False},
+                {'user_id': user.id,      'otp_type': 'email_verification', 'verified': False},
+                {'user_id': str(user.id), 'otp_type': 'email_verification', 'verified': False},
             ]},
             {'$set': {'verified': True}}
         )
 
         EmailVerificationOTP.objects.create(
-            user=user, otp=otp, email=user.email, expires_at=expires
+            user=user, otp=otp, email=user.email,
+            otp_type='email_verification', expires_at=expires
         )
         try:
             send_email_verification_otp(user.email, user.username, otp)
@@ -443,15 +460,14 @@ class VerifyEmailOTPView(APIView):
         col = self._get_otp_collection()
 
         # Try both int and string user_id — djongo may store either
+        # Scope to email_verification OTPs only
         doc = col.find_one(
             {'$or': [
-                {'user_id': user.id, 'otp': otp_input, 'verified': False},
-                {'user_id': str(user.id), 'otp': otp_input, 'verified': False},
+                {'user_id': user.id,      'otp': otp_input, 'otp_type': 'email_verification', 'verified': False},
+                {'user_id': str(user.id), 'otp': otp_input, 'otp_type': 'email_verification', 'verified': False},
             ]},
             sort=[('created_at', -1)]
         )
-
-        # Debug: log what's in the collection for this user
         if not doc:
             return Response({'error': 'Invalid OTP.'}, status=400)
 

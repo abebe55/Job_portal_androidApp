@@ -30,20 +30,25 @@ class User(AbstractUser):
 
 
 class EmailVerificationOTP(models.Model):
-    """6-digit OTP for email verification during registration."""
-    user      = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otps')
-    otp       = models.CharField(max_length=6)
-    email     = models.EmailField()
+    """6-digit OTP for email verification or password reset."""
+    OTP_TYPE_CHOICES = (
+        ('email_verification', 'Email Verification'),
+        ('password_reset', 'Password Reset'),
+    )
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otps')
+    otp        = models.CharField(max_length=6)
+    email      = models.EmailField()
+    otp_type   = models.CharField(max_length=30, choices=OTP_TYPE_CHOICES, default='email_verification')
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
-    verified  = models.BooleanField(default=False)
+    verified   = models.BooleanField(default=False)
 
     def is_expired(self):
         from django.utils import timezone
         return timezone.now() > self.expires_at
 
     def __str__(self):
-        return f"OTP for {self.email}"
+        return f"OTP ({self.otp_type}) for {self.email}"
 
 
 class EmployerVerification(models.Model):
