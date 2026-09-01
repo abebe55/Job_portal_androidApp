@@ -5,13 +5,14 @@ import { adminGetEmployerVerifications, adminReviewEmployerVerification } from '
 
 const BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://127.0.0.1:8000';
 
-const STATUS_STYLE: any = {
+/* ─── config ─────────────────────────────────────────────── */
+const STATUS_CFG: Record<string, { bg: string; color: string; label: string }> = {
   pending:  { bg: '#fef3c7', color: '#b45309', label: 'Pending Review' },
   approved: { bg: '#dcfce7', color: '#15803d', label: 'Approved' },
   rejected: { bg: '#fee2e2', color: '#b91c1c', label: 'Rejected' },
 };
 
-const TYPE_LABELS: any = {
+const TYPE_LABELS: Record<string, string> = {
   company:    'Company / PLC',
   factory:    'Factory / Manufacturing',
   ngo:        'NGO / Organization',
@@ -20,33 +21,68 @@ const TYPE_LABELS: any = {
   other:      'Other',
 };
 
+/* ─── small reusable pieces ──────────────────────────────── */
+function Badge({ bg, color, children }: { bg: string; color: string; children: React.ReactNode }) {
+  return (
+    <span style={{ padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 700, background: bg, color, whiteSpace: 'nowrap' as const }}>
+      {children}
+    </span>
+  );
+}
+
+function Alert({ type, msg, onClose }: { type: 'success' | 'error'; msg: string; onClose: () => void }) {
+  const ok = type === 'success';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 'var(--radius-md)', padding: '10px 16px', marginBottom: 16, fontSize: 13, fontWeight: 500, background: ok ? '#dcfce7' : '#fee2e2', border: `1px solid ${ok ? '#86efac' : '#fca5a5'}`, color: ok ? '#15803d' : '#b91c1c' }}>
+      <span>{ok ? '✓' : '✕'} {msg}</span>
+      <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'inherit', opacity: 0.7 }} onClick={onClose}>✕</button>
+    </div>
+  );
+}
+
+/* ─── Image preview modal ─────────────────────────────────── */
 function ImageModal({ url, label, onClose }: { url: string; label: string; onClose: () => void }) {
   return (
-    <div style={s.modalOverlay} onClick={onClose}>
-      <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-        <div style={s.modalHeader}>
-          <span style={s.modalTitle}>{label}</span>
-          <button style={s.modalClose} onClick={onClose}>✕</button>
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: 'var(--surface)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{label}</span>
+          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-sub)', fontSize: 18, lineHeight: 1 }} onClick={onClose}>✕</button>
         </div>
-        <img src={url} alt={label} style={s.modalImg} />
+        <img src={url} alt={label} style={{ maxWidth: '85vw', maxHeight: '78vh', objectFit: 'contain', display: 'block' }} />
       </div>
     </div>
   );
 }
 
+/* ─── Document link row ───────────────────────────────────── */
 function DocLink({ label, url }: { label: string; url: string }) {
   const [preview, setPreview] = useState(false);
   if (!url) return null;
-  const full = url.startsWith('http') ? url : `${BASE}${url}`;
+  const full    = url.startsWith('http') ? url : `${BASE}${url}`;
   const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
   return (
     <>
-      <div style={s.docRow}>
-        <span style={s.docLabel}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+        <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{label}</span>
         {isImage ? (
-          <button style={s.docBtn} onClick={() => setPreview(true)}>🖼 View Image</button>
+          <button
+            style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '3px 10px', cursor: 'pointer' }}
+            onClick={() => setPreview(true)}
+          >
+            View Image
+          </button>
         ) : (
-          <a href={full} target="_blank" rel="noreferrer" style={s.docLink}>📄 View File</a>
+          <a href={full} target="_blank" rel="noreferrer"
+            style={{ fontSize: 12, fontWeight: 700, color: 'var(--info)', background: '#eff6ff', borderRadius: 'var(--radius-sm)', padding: '3px 10px' }}>
+            View File
+          </a>
         )}
       </div>
       {preview && <ImageModal url={full} label={label} onClose={() => setPreview(false)} />}
@@ -54,49 +90,59 @@ function DocLink({ label, url }: { label: string; url: string }) {
   );
 }
 
+/* ─── Summary stat card ───────────────────────────────────── */
+function SumCard({ count, label, color, bg }: { count: number; label: string; color: string; bg: string }) {
+  return (
+    <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 28, fontWeight: 800, color }}>{count}</div>
+      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>{label}</div>
+      <div style={{ height: 3, borderRadius: 2, background: bg, marginTop: 4 }} />
+    </div>
+  );
+}
+
+/* ─── Page ────────────────────────────────────────────────── */
 export default function EmployerApprovalsPage() {
-  const [verifs, setVerifs]   = useState<any[]>([]);
-  const [allVerifs, setAllVerifs] = useState<any[]>([]); // for counts
-  const [filter, setFilter]   = useState('pending');
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<number | null>(null);
-  const [notes, setNotes]     = useState<Record<number, string>>({});
-  const [acting, setActing] = useState<string | null>(null); // 'id-approve' | 'id-reject'
-  const [success, setSuccess] = useState('');
-  const [error, setError]     = useState('');
+  const [verifs, setVerifs]       = useState<any[]>([]);
+  const [allVerifs, setAllVerifs] = useState<any[]>([]);
+  const [filter, setFilter]       = useState('pending');
+  const [loading, setLoading]     = useState(true);
+  const [expanded, setExpanded]   = useState<number | null>(null);
+  const [notes, setNotes]         = useState<Record<number, string>>({});
+  const [acting, setActing]       = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg]     = useState('');
 
   const fetchVerifs = async () => {
     setLoading(true);
     try {
-      // Fetch filtered list for display
-      const params = filter !== 'all' ? { status: filter } : {};
-      const res = await adminGetEmployerVerifications(params);
-      const data = res.data.map((v: any) => ({ ...v, id: v.user_id }));
-      setVerifs(data);
-      // Fetch all for accurate counts
-      const allRes = await adminGetEmployerVerifications({});
+      const params  = filter !== 'all' ? { status: filter } : {};
+      const [res, allRes] = await Promise.all([
+        adminGetEmployerVerifications(params),
+        adminGetEmployerVerifications({}),
+      ]);
+      setVerifs(res.data.map((v: any) => ({ ...v, id: v.user_id })));
       setAllVerifs(allRes.data);
-    } catch (e) {
-      // ignore
-    }
+    } catch { /* silent */ }
     setLoading(false);
   };
 
   useEffect(() => { fetchVerifs(); }, [filter]);
+
   useEffect(() => {
-    if (success) { const t = setTimeout(() => setSuccess(''), 3500); return () => clearTimeout(t); }
-  }, [success]);
+    if (successMsg) { const t = setTimeout(() => setSuccessMsg(''), 3500); return () => clearTimeout(t); }
+  }, [successMsg]);
 
   const handleAction = async (id: number, action: 'approve' | 'reject') => {
     setActing(`${id}-${action}`);
-    setError('');
+    setErrorMsg('');
     try {
       await adminReviewEmployerVerification(id, { action, note: notes[id] || '' });
-      setSuccess(`Employer ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
+      setSuccessMsg(`Employer ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
       setExpanded(null);
       fetchVerifs();
     } catch (e: any) {
-      setError(e?.response?.data?.detail || 'Action failed.');
+      setErrorMsg(e?.response?.data?.detail || 'Action failed.');
     }
     setActing(null);
   };
@@ -109,110 +155,129 @@ export default function EmployerApprovalsPage() {
 
   return (
     <AdminLayout>
-      <div style={s.pageHeader}>
-        <h1 style={s.pageTitle}>Employer Approvals</h1>
-        <p style={s.pageSub}>Review employer registration credentials and approve or reject accounts</p>
+
+      {/* ── Page header ── */}
+      <div style={p.pageHeader}>
+        <div>
+          <h1 style={p.pageTitle}>Employer Approvals</h1>
+          <p style={p.pageSub}>Review employer registration credentials and approve or reject accounts</p>
+        </div>
       </div>
 
-      {/* Summary cards */}
-      <div style={s.summaryRow}>
-        {[
-          { label: 'Pending Review', count: counts.pending,  color: '#b45309', bg: '#fef3c7' },
-          { label: 'Approved',       count: counts.approved, color: '#15803d', bg: '#dcfce7' },
-          { label: 'Rejected',       count: counts.rejected, color: '#b91c1c', bg: '#fee2e2' },
-        ].map(c => (
-          <div key={c.label} style={s.summaryCard}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: c.color }}>{c.count}</div>
-            <div style={{ fontSize: 13, color: '#374151', fontWeight: 700 }}>{c.label}</div>
-          </div>
-        ))}
+      {/* ── Summary cards ── */}
+      <div style={p.sumGrid}>
+        <SumCard count={counts.pending}  label="Pending Review" color="#b45309" bg="#fde68a" />
+        <SumCard count={counts.approved} label="Approved"       color="#15803d" bg="#86efac" />
+        <SumCard count={counts.rejected} label="Rejected"       color="#b91c1c" bg="#fca5a5" />
       </div>
 
-      {/* Alerts */}
-      {success && (
-        <div style={s.alertSuccess}>
-          <span>✓ {success}</span>
-          <button style={s.alertClose} onClick={() => setSuccess('')}>✕</button>
-        </div>
-      )}
-      {error && (
-        <div style={s.alertError}>
-          <span>✕ {error}</span>
-          <button style={s.alertClose} onClick={() => setError('')}>✕</button>
-        </div>
-      )}
+      {/* ── Alerts ── */}
+      {successMsg && <Alert type="success" msg={successMsg} onClose={() => setSuccessMsg('')} />}
+      {errorMsg   && <Alert type="error"   msg={errorMsg}   onClose={() => setErrorMsg('')}   />}
 
-      {/* Filter tabs */}
-      <div style={s.filterRow}>
-        {['pending', 'approved', 'rejected', 'all'].map(f => (
+      {/* ── Filter tabs ── */}
+      <div style={p.filterRow}>
+        {(['pending', 'approved', 'rejected', 'all'] as const).map(f => (
           <button key={f}
-            style={{ ...s.filterBtn, ...(filter === f ? s.filterActive : {}) }}
-            onClick={() => setFilter(f)}>
+            style={{ ...p.filterBtn, ...(filter === f ? p.filterActive : {}) }}
+            onClick={() => setFilter(f)}
+          >
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {f === 'pending' && counts.pending > 0 && (
-              <span style={s.badge}>{counts.pending}</span>
+              <span style={{ background: '#ef4444', color: '#fff', borderRadius: 'var(--radius-full)', fontSize: 10, fontWeight: 800, padding: '1px 6px', marginLeft: 4 }}>
+                {counts.pending}
+              </span>
             )}
           </button>
         ))}
       </div>
 
-      {/* List */}
+      {/* ── List ── */}
       {loading ? (
-        <div style={s.loadingBox}><div style={s.spinner} /><p style={{ marginTop: 12, color: '#374151' }}>Loading...</p></div>
+        <div style={p.loadingBox}>
+          <div style={p.spinner} />
+          <p style={{ marginTop: 12, color: 'var(--text-sub)', fontWeight: 500 }}>Loading employers…</p>
+        </div>
       ) : verifs.length === 0 ? (
-        <div style={s.emptyBox}>
-          <span style={{ fontSize: 40 }}>🏢</span>
-          <p style={{ fontWeight: 700, fontSize: 16, marginTop: 8 }}>No {filter} employer applications.</p>
+        <div style={p.emptyBox}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p style={{ marginTop: 12, fontWeight: 600, color: 'var(--text-sub)' }}>
+            No {filter === 'all' ? '' : filter} employer applications.
+          </p>
         </div>
       ) : (
-        <div style={s.list}>
+        <div style={p.list}>
           {verifs.map(v => {
-            const st = STATUS_STYLE[v.status] || STATUS_STYLE.pending;
+            const st     = STATUS_CFG[v.status] ?? STATUS_CFG.pending;
             const isOpen = expanded === v.id;
             return (
-              <div key={v.id} style={s.card}>
-                {/* Header row */}
-                <div style={s.cardTop} onClick={() => setExpanded(isOpen ? null : v.id)}>
-                  <div style={s.empAvatar}>{v.username?.[0]?.toUpperCase() ?? 'E'}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={s.empName}>{v.username}</div>
-                    <div style={s.empMeta}>
-                      <span>{v.email}</span>
+              <div key={v.id} style={p.card}>
+
+                {/* ── Card header row ── */}
+                <div style={p.cardTop} onClick={() => setExpanded(isOpen ? null : v.id)}>
+                  <div style={p.avatar}>{v.username?.[0]?.toUpperCase() ?? 'E'}</div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={p.empName}>{v.username}</div>
+                    <div style={p.empMeta}>
+                      {v.email && <span>{v.email}</span>}
                       {v.phone && <span>· {v.phone}</span>}
                       {v.location && <span>· {v.location}</span>}
                     </div>
-                    <div style={s.empType}>
-                      <span style={s.typeTag}>{TYPE_LABELS[v.employer_type] || v.employer_type}</span>
-                      {v.organization_name && <span style={s.orgName}>{v.organization_name}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <Badge bg="#fef3c7" color="#b45309">
+                        {TYPE_LABELS[v.employer_type] ?? v.employer_type}
+                      </Badge>
+                      {v.organization_name && (
+                        <span style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 500 }}>{v.organization_name}</span>
+                      )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ ...s.statusBadge, background: st.bg, color: st.color }}>{st.label}</span>
-                    <span style={{ fontSize: 16, color: '#9ca3af' }}>{isOpen ? '▲' : '▼'}</span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <Badge bg={st.bg} color={st.color}>{st.label}</Badge>
+                    <button style={p.chevronBtn}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+                        {isOpen ? <polyline points="18 15 12 9 6 15"/> : <polyline points="6 9 12 15 18 9"/>}
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
-                {/* Expanded detail */}
+                {/* ── Expanded detail ── */}
                 {isOpen && (
-                  <div style={s.detail}>
-                    <div style={s.detailGrid}>
+                  <div style={p.detail}>
+                    <div style={p.detailGrid}>
+
                       {/* Left: employer info */}
                       <div>
-                        <div style={s.sectionLabel}>Employer Information</div>
-                        <div style={s.infoRow}><span style={s.infoKey}>Type</span><span>{TYPE_LABELS[v.employer_type] || v.employer_type}</span></div>
-                        {v.employer_type_other && <div style={s.infoRow}><span style={s.infoKey}>Specified As</span><span>{v.employer_type_other}</span></div>}
-                        {v.organization_name && <div style={s.infoRow}><span style={s.infoKey}>Organization</span><span>{v.organization_name}</span></div>}
-                        {v.national_id_number && <div style={s.infoRow}><span style={s.infoKey}>National ID No.</span><span style={{ fontWeight: 700 }}>{v.national_id_number}</span></div>}
-                        <div style={s.infoRow}><span style={s.infoKey}>Submitted</span><span>{new Date(v.submitted_at).toLocaleString()}</span></div>
-                        {v.reviewed_at && <div style={s.infoRow}><span style={s.infoKey}>Reviewed</span><span>{new Date(v.reviewed_at).toLocaleString()}</span></div>}
+                        <p style={p.sectionLabel}>Employer Information</p>
+                        {[
+                          ['Type',          TYPE_LABELS[v.employer_type] ?? v.employer_type],
+                          v.employer_type_other && ['Specified As', v.employer_type_other],
+                          v.organization_name   && ['Organization', v.organization_name],
+                          v.national_id_number  && ['National ID No.', v.national_id_number],
+                          ['Submitted', new Date(v.submitted_at).toLocaleString()],
+                          v.reviewed_at && ['Reviewed', new Date(v.reviewed_at).toLocaleString()],
+                        ].filter(Boolean).map(([k, val]) => (
+                          <div key={k as string} style={{ display: 'flex', gap: 10, marginBottom: 7, fontSize: 13 }}>
+                            <span style={{ fontWeight: 600, color: 'var(--text-sub)', minWidth: 130 }}>{k as string}</span>
+                            <span style={{ color: 'var(--text)', fontWeight: k === 'National ID No.' ? 700 : 400 }}>{val as string}</span>
+                          </div>
+                        ))}
                         {v.admin_note && (
-                          <div style={s.noteBox}><strong>Admin note:</strong> {v.admin_note}</div>
+                          <div style={p.noteBox}>
+                            <strong>Admin note:</strong> {v.admin_note}
+                          </div>
                         )}
                       </div>
 
                       {/* Right: documents */}
                       <div>
-                        <div style={s.sectionLabel}>Uploaded Documents</div>
+                        <p style={p.sectionLabel}>Uploaded Documents</p>
                         <DocLink label="Business License"         url={v.business_license} />
                         <DocLink label="TIN Certificate"          url={v.tin_certificate} />
                         <DocLink label="Registration Certificate" url={v.registration_cert} />
@@ -221,33 +286,41 @@ export default function EmployerApprovalsPage() {
                         <DocLink label="Supporting Document"      url={v.supporting_doc} />
                         {!v.business_license && !v.tin_certificate && !v.registration_cert &&
                          !v.national_id_front && !v.national_id_back && !v.supporting_doc && (
-                          <p style={{ color: '#9ca3af', fontSize: 13 }}>No documents uploaded.</p>
+                          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 8 }}>No documents uploaded.</p>
                         )}
                       </div>
                     </div>
 
-                    {/* Action area — only for pending */}
+                    {/* ── Action area (pending only) ── */}
                     {v.status === 'pending' && (
-                      <div style={s.actionArea}>
-                        <div style={s.noteRow}>
-                          <label style={s.noteLabel}>Note to employer (optional)</label>
-                          <input style={s.noteInput}
-                            placeholder="Reason for approval or rejection..."
+                      <div style={p.actionArea}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-sub)', minWidth: 200, flexShrink: 0 }}>
+                            Note to employer (optional)
+                          </label>
+                          <input
+                            style={p.noteInput}
+                            placeholder="Reason for approval or rejection…"
                             value={notes[v.id] || ''}
-                            onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))} />
+                            onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
+                          />
                         </div>
-                        <div style={s.btnRow}>
+                        <div style={{ display: 'flex', gap: 10 }}>
                           <button
-                            style={{ ...s.approveBtn, opacity: acting === `${v.id}-approve` ? 0.7 : 1 }}
+                            style={{ ...p.approveBtn, opacity: acting === `${v.id}-approve` ? 0.7 : 1 }}
                             disabled={!!acting}
-                            onClick={() => handleAction(v.id, 'approve')}>
-                            {acting === `${v.id}-approve` ? 'Approving…' : '✓ Approve Employer'}
+                            onClick={() => handleAction(v.id, 'approve')}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            {acting === `${v.id}-approve` ? 'Approving…' : 'Approve Employer'}
                           </button>
                           <button
-                            style={{ ...s.rejectBtn, opacity: acting === `${v.id}-reject` ? 0.7 : 1 }}
+                            style={{ ...p.rejectBtn, opacity: acting === `${v.id}-reject` ? 0.7 : 1 }}
                             disabled={!!acting}
-                            onClick={() => handleAction(v.id, 'reject')}>
-                            {acting === `${v.id}-reject` ? 'Rejecting…' : '✕ Reject'}
+                            onClick={() => handleAction(v.id, 'reject')}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            {acting === `${v.id}-reject` ? 'Rejecting…' : 'Reject'}
                           </button>
                         </div>
                       </div>
@@ -263,70 +336,90 @@ export default function EmployerApprovalsPage() {
   );
 }
 
-const s: Record<string, React.CSSProperties> = {
-  pageHeader:   { marginBottom: 20 },
-  pageTitle:    { fontSize: 22, fontWeight: 800, color: '#111827', marginBottom: 4 },
-  pageSub:      { fontSize: 14, color: '#6b7280' },
+/* ─── Styles ─────────────────────────────────────────────── */
+const p: Record<string, React.CSSProperties> = {
+  pageHeader: { marginBottom: 24 },
+  pageTitle:  { fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 4 },
+  pageSub:    { fontSize: 14, color: 'var(--text-sub)' },
 
-  summaryRow:   { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 },
-  summaryCard:  {
-    background: 'rgba(255,255,255,0.75)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    borderRadius: 12,
-    padding: '16px 18px',
-    boxShadow: '0 4px 20px rgba(124,58,237,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-    border: '1px solid rgba(255,255,255,0.9)',
+  sumGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 16, marginBottom: 24,
   },
 
-  alertSuccess: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#dcfce7', border: '1px solid #86efac', borderRadius: 10, padding: '10px 16px', marginBottom: 14, color: '#15803d', fontWeight: 600, fontSize: 14 },
-  alertError:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 10, padding: '10px 16px', marginBottom: 14, color: '#b91c1c', fontWeight: 600, fontSize: 14 },
-  alertClose:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'inherit', opacity: 0.7 },
+  filterRow:   { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 },
+  filterBtn:   {
+    display: 'inline-flex', alignItems: 'center', gap: 4,
+    padding: '7px 14px', borderRadius: 'var(--radius-full)',
+    border: '1.5px solid var(--border)', background: 'var(--surface)',
+    fontSize: 12, fontWeight: 600, color: 'var(--text-sub)', cursor: 'pointer',
+  },
+  filterActive: { background: 'var(--primary)', color: '#fff', border: '1.5px solid var(--primary)' },
 
-  filterRow:    { display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' as const },
-  filterBtn:    { padding: '7px 16px', borderRadius: 20, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, fontWeight: 700, color: '#4b5563', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
-  filterActive: { background: '#7c3aed', color: '#fff', border: '1px solid #7c3aed' },
-  badge:        { background: '#ef4444', color: '#fff', borderRadius: 20, fontSize: 11, fontWeight: 800, padding: '1px 7px' },
+  loadingBox: { padding: 64, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+  spinner:    { width: 36, height: 36, border: '3px solid var(--border)', borderTop: '3px solid var(--primary)', borderRadius: '50%' },
+  emptyBox:   { padding: 64, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--text-muted)' },
 
-  loadingBox:   { padding: 48, textAlign: 'center' as const, display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
-  spinner:      { width: 40, height: 40, border: '3px solid #e0e7ff', borderTop: '3px solid #7c3aed', borderRadius: '50%' },
-  emptyBox:     { padding: 48, textAlign: 'center' as const, color: '#6b7280' },
+  list: { display: 'flex', flexDirection: 'column', gap: 10 },
 
-  list:         { display: 'flex', flexDirection: 'column' as const, gap: 12 },
-  card:         { background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' },
-  cardTop:      { display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', cursor: 'pointer' },
-  empAvatar:    { width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18, flexShrink: 0 },
-  empName:      { fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 2 },
-  empMeta:      { fontSize: 12, color: '#6b7280', display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 4 },
-  empType:      { display: 'flex', alignItems: 'center', gap: 8 },
-  typeTag:      { fontSize: 11, fontWeight: 700, background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: 20 },
-  orgName:      { fontSize: 12, color: '#374151', fontWeight: 600 },
-  statusBadge:  { padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800 },
+  card: {
+    background: 'var(--surface)',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid var(--border)',
+    boxShadow: 'var(--shadow-sm)',
+    overflow: 'hidden',
+  },
 
-  detail:       { padding: '0 20px 20px', borderTop: '1px solid #f0f0f0' },
-  detailGrid:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 16, marginBottom: 16 },
-  sectionLabel: { fontSize: 11, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 10 },
-  infoRow:      { display: 'flex', gap: 10, marginBottom: 6, fontSize: 13 },
-  infoKey:      { fontWeight: 700, color: '#374151', minWidth: 120 },
-  noteBox:      { background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#92400e', marginTop: 8 },
+  cardTop: {
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '16px 20px', cursor: 'pointer',
+  },
+  avatar: {
+    width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontWeight: 800, fontSize: 18,
+  },
+  empName: { fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 },
+  empMeta: { display: 'flex', gap: 6, flexWrap: 'wrap', fontSize: 12, color: 'var(--text-muted)' },
 
-  docRow:       { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f0f0f0' },
-  docLabel:     { fontSize: 13, color: '#374151', fontWeight: 600 },
-  docLink:      { fontSize: 12, color: '#2563eb', fontWeight: 700, textDecoration: 'none' },
-  docBtn:       { fontSize: 12, color: '#2563eb', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 },
+  chevronBtn: {
+    width: 28, height: 28, borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border)', background: 'var(--surface)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+  },
 
-  modalOverlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  modalBox:     { background: '#fff', borderRadius: 14, overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  modalHeader:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #f0f0f0' },
-  modalTitle:   { fontWeight: 700, fontSize: 14, color: '#111827' },
-  modalClose:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#6b7280', lineHeight: 1 },
-  modalImg:     { maxWidth: '85vw', maxHeight: '80vh', objectFit: 'contain' as const, display: 'block' },
+  detail: { padding: '0 20px 20px', borderTop: '1px solid var(--border)' },
+  detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginTop: 18, marginBottom: 16 },
 
-  actionArea:   { borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 10 },
-  noteRow:      { display: 'flex', alignItems: 'center', gap: 12 },
-  noteLabel:    { fontSize: 13, fontWeight: 600, color: '#6b7280', minWidth: 200 },
-  noteInput:    { flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, background: '#f9fafb' },
-  btnRow:       { display: 'flex', gap: 10 },
-  approveBtn:   { padding: '11px 28px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: '0.01em' },
-  rejectBtn:    { padding: '11px 28px', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: '0.01em' },
+  sectionLabel: {
+    fontSize: 11, fontWeight: 800, color: 'var(--text-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12,
+  },
+
+  noteBox: {
+    background: '#fef3c7', border: '1px solid #fde68a',
+    borderRadius: 'var(--radius-md)', padding: '9px 13px',
+    fontSize: 13, color: '#92400e', marginTop: 10,
+  },
+
+  actionArea: {
+    borderTop: '1px solid var(--border)', paddingTop: 16,
+  },
+  noteInput: {
+    flex: 1, padding: '9px 12px',
+    borderRadius: 'var(--radius-md)', border: '1.5px solid var(--border)',
+    fontSize: 14, background: 'var(--bg)', color: 'var(--text)', outline: 'none',
+  },
+
+  approveBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none',
+    background: '#dcfce7', color: '#15803d', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+  },
+  rejectBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none',
+    background: '#fee2e2', color: '#b91c1c', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+  },
 };

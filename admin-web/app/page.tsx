@@ -5,21 +5,81 @@ import { adminLogin } from '../lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
+/* ─── tiny reusable pieces ─────────────────────────────────── */
+
+function FieldInput({
+  type = 'text', placeholder, value, onChange, icon,
+}: {
+  type?: string; placeholder: string; value: string;
+  onChange: (v: string) => void; icon: React.ReactNode;
+}) {
+  return (
+    <div style={s.inputWrap}>
+      <span style={s.inputIcon}>{icon}</span>
+      <input
+        style={s.input}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        required
+      />
+    </div>
+  );
+}
+
+function PrimaryBtn({ children, disabled, type = 'submit' }: {
+  children: React.ReactNode; disabled?: boolean; type?: 'submit' | 'button';
+}) {
+  return (
+    <button style={{ ...s.btn, opacity: disabled ? 0.7 : 1 }} type={type} disabled={disabled}>
+      {children}
+    </button>
+  );
+}
+
+function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" style={s.ghostBtn} onClick={onClick}>{children}</button>
+  );
+}
+
+function Alert({ type, msg }: { type: 'error' | 'success'; msg: string }) {
+  return (
+    <div style={type === 'error' ? s.alertError : s.alertSuccess}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+        {type === 'error'
+          ? <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>
+          : <><polyline points="20 6 9 17 4 12"/></>
+        }
+      </svg>
+      {msg}
+    </div>
+  );
+}
+
+/* ─── Main component ────────────────────────────────────────── */
+
 export default function LoginPage() {
+  const router = useRouter();
+
+  /* Login */
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [resetStep, setResetStep] = useState<'email'|'otp'>('email');
+  const [loginErr, setLoginErr] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  /* Reset flow */
+  const [showReset, setShowReset]   = useState(false);
+  const [resetStep, setResetStep]   = useState<'email' | 'otp'>('email');
   const [resetEmail, setResetEmail] = useState('');
-  const [resetOtp, setResetOtp] = useState('');
-  const [resetNewPass, setResetNewPass] = useState('');
+  const [resetOtp, setResetOtp]     = useState('');
+  const [resetNewPass, setResetNewPass]       = useState('');
   const [resetConfirmPass, setResetConfirmPass] = useState('');
-  const [resetMsg, setResetMsg] = useState('');
-  const [resetErr, setResetErr] = useState('');
+  const [resetMsg, setResetMsg]   = useState('');
+  const [resetErr, setResetErr]   = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     if (localStorage.getItem('admin_token')) router.replace('/dashboard');
@@ -27,35 +87,47 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    setLoginErr(''); setLoginLoading(true);
     try {
       const res = await adminLogin({ username, password });
       localStorage.setItem('admin_token', res.data.access);
       router.replace('/dashboard');
     } catch {
-      setError('Invalid credentials or not an admin account.');
+      setLoginErr('Invalid credentials or not an admin account.');
     }
-    setLoading(false);
+    setLoginLoading(false);
   };
 
   const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetErr(''); setResetLoading(true);
     try {
-      await fetch(`${API_URL}/auth/password-reset/request/`, {
+      const res = await fetch(`${API_URL}/auth/password-reset/request/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setResetErr(data.error || `Server error (${res.status}).`);
+        setResetLoading(false); return;
+      }
       setResetMsg(`OTP sent to ${resetEmail}`);
       setResetStep('otp');
-    } catch { setResetErr('Failed to send OTP.'); }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed')) {
+        setResetErr('Cannot reach the server. Check NEXT_PUBLIC_API_URL.');
+      } else {
+        setResetErr('Failed to send OTP.');
+      }
+    }
     setResetLoading(false);
   };
 
   const handleResetConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setResetErr(''); 
+    setResetErr('');
     if (resetNewPass.length < 8) { setResetErr('Password must be at least 8 characters.'); return; }
     if (resetNewPass !== resetConfirmPass) { setResetErr('Passwords do not match.'); return; }
     setResetLoading(true);
@@ -67,93 +139,228 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) { setResetErr(data.error || 'Failed.'); setResetLoading(false); return; }
-      setResetMsg('Password reset! You can now log in.');
+      setResetMsg('Password reset successfully! You can now sign in.');
       setTimeout(() => { setShowReset(false); setResetStep('email'); setResetMsg(''); }, 2500);
     } catch { setResetErr('Failed to reset password.'); }
     setResetLoading(false);
   };
 
-  return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.logo}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: 'var(--primary)' }}>JP</span>
-        </div>
-        <h1 style={styles.title}>JobPortal Admin</h1>
-        <p style={styles.sub}>Sign in to manage the platform</p>
+  const resendOtp = async () => {
+    setResetMsg(''); setResetErr('');
+    try {
+      await fetch(`${API_URL}/auth/password-reset/request/`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      setResetMsg(`New OTP sent to ${resetEmail}`);
+    } catch { setResetErr('Failed to resend OTP.'); }
+  };
 
-        {!showReset ? (
-          <form onSubmit={handleLogin} style={styles.form}>
-            <input style={styles.input} type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
-            <input style={styles.input} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-            {error && <p style={styles.error}>{error}</p>}
-            <button style={styles.btn} type="submit" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-            <button type="button" style={{ ...styles.btn, background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', marginTop: 8 }}
-              onClick={() => { setShowReset(true); setResetStep('email'); setResetMsg(''); setResetErr(''); }}>
-              Forgot Password?
-            </button>
-          </form>
-        ) : (
-          <div style={styles.form}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-              {resetStep === 'email' ? 'Reset Password' : 'Enter OTP & New Password'}
-            </h3>
-            {resetMsg && <p style={{ color: '#16a34a', fontSize: 13, marginBottom: 8 }}>{resetMsg}</p>}
-            {resetErr && <p style={styles.error}>{resetErr}</p>}
-            {resetStep === 'email' ? (
-              <form onSubmit={handleResetRequest} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <input style={styles.input} type="email" placeholder="Your email address" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
-                <button style={styles.btn} type="submit" disabled={resetLoading}>{resetLoading ? 'Sending...' : 'Send OTP'}</button>
-              </form>
-            ) : (
-              <form onSubmit={handleResetConfirm} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <input style={styles.input} type="text" placeholder="6-digit OTP" value={resetOtp} onChange={e => setResetOtp(e.target.value.replace(/\D/g,'').slice(0,6))} maxLength={6} required />
-                <input style={styles.input} type="password" placeholder="New password (min 8 chars)" value={resetNewPass} onChange={e => setResetNewPass(e.target.value)} required />
-                <input style={styles.input} type="password" placeholder="Confirm new password" value={resetConfirmPass} onChange={e => setResetConfirmPass(e.target.value)} required />
-                <button style={styles.btn} type="submit" disabled={resetLoading}>{resetLoading ? 'Resetting...' : 'Reset Password'}</button>
-                <button type="button" style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 13, marginTop: 4 }}
-                  onClick={async () => {
-                    setResetMsg(''); setResetErr('');
-                    try {
-                      await fetch(`${API_URL}/auth/password-reset/request/`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: resetEmail }),
-                      });
-                      setResetMsg(`New OTP sent to ${resetEmail}`);
-                    } catch { setResetErr('Failed to resend OTP.'); }
-                  }}>
-                  Resend OTP
-                </button>
-              </form>
-            )}
-            <button type="button" style={{ background: 'none', border: 'none', color: 'var(--text-sub)', cursor: 'pointer', marginTop: 10, fontSize: 13 }}
-              onClick={() => setShowReset(false)}>← Back to Sign In</button>
+  const openReset = () => {
+    setShowReset(true); setResetStep('email');
+    setResetMsg(''); setResetErr('');
+    setResetEmail(''); setResetOtp(''); setResetNewPass(''); setResetConfirmPass('');
+  };
+
+  /* ── icons ── */
+  const iconUser = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+  const iconLock = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  );
+  const iconMail = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  );
+  const iconKey = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+    </svg>
+  );
+  const iconHash = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/>
+      <line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>
+    </svg>
+  );
+
+  return (
+    <div style={s.page}>
+      <div style={s.card}>
+
+        {/* Logo */}
+        <div style={s.logoWrap}>
+          <div style={s.logoIcon}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" strokeWidth="2.5">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            </svg>
           </div>
+        </div>
+        <h1 style={s.title}>JobPortal Admin</h1>
+        <p style={s.sub}>
+          {showReset
+            ? resetStep === 'email' ? 'Enter your email to reset your password' : 'Enter the OTP and your new password'
+            : 'Sign in to manage the platform'}
+        </p>
+
+        {/* ── Login form ── */}
+        {!showReset && (
+          <form onSubmit={handleLogin} style={s.form}>
+            <FieldInput placeholder="Username" value={username} onChange={setUsername} icon={iconUser} />
+            <FieldInput type="password" placeholder="Password" value={password} onChange={setPassword} icon={iconLock} />
+            {loginErr && <Alert type="error" msg={loginErr} />}
+            <PrimaryBtn disabled={loginLoading}>{loginLoading ? 'Signing in…' : 'Sign In'}</PrimaryBtn>
+            <GhostBtn onClick={openReset}>Forgot your password?</GhostBtn>
+          </form>
         )}
+
+        {/* ── Reset form — email step ── */}
+        {showReset && resetStep === 'email' && (
+          <form onSubmit={handleResetRequest} style={s.form}>
+            <FieldInput type="email" placeholder="Your email address" value={resetEmail} onChange={setResetEmail} icon={iconMail} />
+            {resetMsg && <Alert type="success" msg={resetMsg} />}
+            {resetErr && <Alert type="error" msg={resetErr} />}
+            <PrimaryBtn disabled={resetLoading}>{resetLoading ? 'Sending…' : 'Send OTP'}</PrimaryBtn>
+            <GhostBtn onClick={() => setShowReset(false)}>← Back to Sign In</GhostBtn>
+          </form>
+        )}
+
+        {/* ── Reset form — OTP step ── */}
+        {showReset && resetStep === 'otp' && (
+          <form onSubmit={handleResetConfirm} style={s.form}>
+            <FieldInput placeholder="6-digit OTP" value={resetOtp}
+              onChange={v => setResetOtp(v.replace(/\D/g, '').slice(0, 6))} icon={iconHash} />
+            <FieldInput type="password" placeholder="New password (min 8 chars)" value={resetNewPass} onChange={setResetNewPass} icon={iconKey} />
+            <FieldInput type="password" placeholder="Confirm new password" value={resetConfirmPass} onChange={setResetConfirmPass} icon={iconLock} />
+            {resetMsg && <Alert type="success" msg={resetMsg} />}
+            {resetErr && <Alert type="error" msg={resetErr} />}
+            <PrimaryBtn disabled={resetLoading}>{resetLoading ? 'Resetting…' : 'Reset Password'}</PrimaryBtn>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <GhostBtn onClick={resendOtp}>Resend OTP</GhostBtn>
+              <GhostBtn onClick={() => setShowReset(false)}>← Back to Sign In</GhostBtn>
+            </div>
+          </form>
+        )}
+
       </div>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' },
+/* ─── Styles ──────────────────────────────────────────────── */
+const s: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: '100vh',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--bg)',
+    padding: '24px 16px',
+  },
+
   card: {
-    background: '#fff', borderRadius: 16, padding: '40px 36px', width: 380,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.08)', textAlign: 'center',
+    background: 'var(--surface)',
+    borderRadius: 'var(--radius-xl)',
+    padding: '44px 40px 36px',
+    width: '100%', maxWidth: 400,
+    boxShadow: 'var(--shadow-lg)',
+    border: '1px solid var(--border)',
+    textAlign: 'center',
   },
-  logo: { fontSize: 48, marginBottom: 12 },
-  title: { fontSize: 24, fontWeight: 800, color: 'var(--primary)', marginBottom: 6 },
-  sub: { color: 'var(--text-sub)', fontSize: 14, marginBottom: 28 },
-  form: { display: 'flex', flexDirection: 'column', gap: 12 },
+
+  logoWrap: { display: 'flex', justifyContent: 'center', marginBottom: 16 },
+  logoIcon: {
+    width: 56, height: 56,
+    borderRadius: 'var(--radius-xl)',
+    background: 'var(--primary-light)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 4px 12px rgba(108,99,255,0.2)',
+  },
+
+  title: {
+    fontSize: 22, fontWeight: 800,
+    color: 'var(--text)',
+    marginBottom: 6,
+  },
+  sub: {
+    fontSize: 14, color: 'var(--text-sub)',
+    marginBottom: 28, lineHeight: 1.5,
+  },
+
+  form: {
+    display: 'flex', flexDirection: 'column', gap: 12,
+    textAlign: 'left',
+  },
+
+  inputWrap: {
+    position: 'relative',
+    display: 'flex', alignItems: 'center',
+  },
+  inputIcon: {
+    position: 'absolute', left: 14,
+    color: 'var(--text-muted)',
+    display: 'flex', alignItems: 'center',
+    pointerEvents: 'none',
+  },
   input: {
-    padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border)',
-    fontSize: 15, background: 'var(--bg)', color: 'var(--text)', outline: 'none',
+    width: '100%',
+    paddingTop: 12, paddingBottom: 12,
+    paddingLeft: 42, paddingRight: 14,
+    borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--border)',
+    fontSize: 14, fontWeight: 500,
+    color: 'var(--text)',
+    background: 'var(--bg)',
+    outline: 'none',
+    transition: 'border-color var(--transition-fast)',
   },
-  error: { color: 'var(--danger)', fontSize: 13, textAlign: 'left' },
+
   btn: {
-    background: 'var(--primary)', color: '#fff', border: 'none',
-    borderRadius: 10, padding: '13px', fontSize: 15, fontWeight: 700, marginTop: 4,
+    width: '100%',
+    padding: '13px',
+    borderRadius: 'var(--radius-md)',
+    border: 'none',
+    background: 'var(--primary)',
+    color: '#fff',
+    fontSize: 15, fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'background var(--transition-fast)',
+    marginTop: 4,
+  },
+
+  ghostBtn: {
+    background: 'none', border: 'none',
+    color: 'var(--primary)',
+    fontSize: 13, fontWeight: 500,
+    cursor: 'pointer',
+    padding: '4px 0',
+    textAlign: 'center',
+  },
+
+  alertError: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    background: 'var(--danger-light)',
+    border: '1px solid #fca5a5',
+    borderRadius: 'var(--radius-md)',
+    padding: '10px 14px',
+    fontSize: 13, fontWeight: 500,
+    color: '#b91c1c',
+  },
+  alertSuccess: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    background: '#dcfce7',
+    border: '1px solid #86efac',
+    borderRadius: 'var(--radius-md)',
+    padding: '10px 14px',
+    fontSize: 13, fontWeight: 500,
+    color: '#15803d',
   },
 };
