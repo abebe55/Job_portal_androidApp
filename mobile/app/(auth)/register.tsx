@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { C } from '../../constants/theme';
-import api from '../../services/api';
+import { register as apiRegister, registerMultipart } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 // ── Employer types with their required docs ───────────────────────────────────
