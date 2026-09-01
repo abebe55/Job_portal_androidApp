@@ -24,9 +24,7 @@ class PasswordResetRequestView(APIView):
         if not email:
             return Response({'error': 'Email is required.'}, status=400)
 
-        from django.db import connections
-        db_conn = connections['default']
-        db_conn.ensure_connection()
+        db_conn = _get_db_connection()
         usr_col = db_conn.connection['users_user']
         otp_col = db_conn.connection['users_emailverificationotp']
 
@@ -87,11 +85,9 @@ class PasswordResetConfirmView(APIView):
         if len(new_password) < 8:
             return Response({'error': 'Password must be at least 8 characters.'}, status=400)
 
-        from django.db import connections
         from django.contrib.auth.hashers import make_password
         from datetime import timezone as dt_tz
-        db_conn = connections['default']
-        db_conn.ensure_connection()
+        db_conn = _get_db_connection()
         usr_col = db_conn.connection['users_user']
         otp_col = db_conn.connection['users_emailverificationotp']
 
@@ -120,6 +116,25 @@ class PasswordResetConfirmView(APIView):
         usr_col.update_one({'_id': user_doc['_id']}, {'$set': {'password': make_password(new_password)}})
 
         return Response({'message': 'Password reset successfully. You can now log in.'})
+
+
+def _get_db_connection():
+    """Return a stable MongoDB connection with retry on first-connect failure."""
+    import time
+    from django.db import connections
+    for attempt in range(3):
+        try:
+            db_conn = connections['default']
+            if db_conn.connection is None:
+                db_conn.ensure_connection()
+            return db_conn
+        except Exception:
+            connections['default'].close()
+            time.sleep(0.5 * (attempt + 1))
+    # Final attempt — let it raise naturally
+    db_conn = connections['default']
+    db_conn.ensure_connection()
+    return db_conn
 
 
 class IsAdmin(permissions.BasePermission):

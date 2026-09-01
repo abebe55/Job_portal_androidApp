@@ -55,20 +55,33 @@ class RegisterSerializer(serializers.ModelSerializer):
             'supporting_doc',
         ]
 
-    def validate_username(self, value):
+    def _get_user_collection(self):
+        """Get MongoDB users collection with retry on connection failure."""
+        import time
         from django.db import connections
-        db_conn = connections['default']
-        db_conn.ensure_connection()
-        col = db_conn.connection['users_user']
+        last_exc = None
+        for attempt in range(3):
+            try:
+                db_conn = connections['default']
+                if db_conn.connection is None:
+                    db_conn.ensure_connection()
+                return db_conn.connection['users_user']
+            except Exception as exc:
+                last_exc = exc
+                connections['default'].close()
+                time.sleep(0.5 * (attempt + 1))
+        raise serializers.ValidationError(
+            "Database temporarily unavailable. Please try again."
+        )
+
+    def validate_username(self, value):
+        col = self._get_user_collection()
         if col.find_one({'username': value}):
             raise serializers.ValidationError("A user with that username already exists.")
         return value
 
     def validate_email(self, value):
-        from django.db import connections
-        db_conn = connections['default']
-        db_conn.ensure_connection()
-        col = db_conn.connection['users_user']
+        col = self._get_user_collection()
         if col.find_one({'email': value}):
             raise serializers.ValidationError("A user with that email already exists.")
         return value
