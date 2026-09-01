@@ -1,21 +1,29 @@
 """
-Centralized email service for JobPortal — powered by Brevo (sib-api-v3-sdk).
-All emails are sent non-blocking (errors are logged, never crash the request).
+Centralized email service for JobPortal — powered by Brevo (brevo-python >= 5.x).
+
+Migration note
+--------------
+Old SDK : sib-api-v3-sdk  →  sib_api_v3_sdk.ApiClient / TransactionalEmailsApi
+New SDK : brevo-python     →  brevo.Brevo  /  client.transactional_emails.send_transac_email()
+
+All public function signatures are unchanged — no callers need updating.
 """
 import logging
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
 from django.conf import settings
+
+from brevo import Brevo
+from brevo.transactional_emails import (
+    SendTransacEmailRequestSender,
+    SendTransacEmailRequestToItem,
+)
+from brevo.core.api_error import ApiError
 
 logger = logging.getLogger(__name__)
 
 
-def _get_api_instance():
-    """Return a configured Brevo TransactionalEmailsApi instance."""
-    configuration = sib_api_v3_sdk.Configuration()
-    configuration.api_key['api-key'] = settings.BREVO_API_KEY
-    client = sib_api_v3_sdk.ApiClient(configuration)
-    return sib_api_v3_sdk.TransactionalEmailsApi(client)
+def _get_client() -> Brevo:
+    """Return a configured Brevo client instance."""
+    return Brevo(api_key=settings.BREVO_API_KEY)
 
 
 def _send(to: str, subject: str, html: str) -> bool:
@@ -23,17 +31,20 @@ def _send(to: str, subject: str, html: str) -> bool:
     if not to or not to.strip():
         return False
     try:
-        api_instance = _get_api_instance()
-        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-            sender={"name": settings.BREVO_SENDER_NAME, "email": settings.BREVO_SENDER_EMAIL},
-            to=[{"email": to}],
+        client = _get_client()
+        client.transactional_emails.send_transac_email(
             subject=subject,
             html_content=html,
+            sender=SendTransacEmailRequestSender(
+                name=settings.BREVO_SENDER_NAME,
+                email=settings.BREVO_SENDER_EMAIL,
+            ),
+            to=[SendTransacEmailRequestToItem(email=to)],
         )
-        api_instance.send_transac_email(send_smtp_email)
+        logger.info(f'[Brevo] Email "{subject}" sent to {to}')
         return True
-    except ApiException as e:
-        logger.error(f'[Brevo] API error sending "{subject}" to {to}: {e}')
+    except ApiError as e:
+        logger.error(f'[Brevo] API error sending "{subject}" to {to}: status={e.status_code} body={e.body}')
         return False
     except Exception as e:
         logger.error(f'[Brevo] Failed to send "{subject}" to {to}: {e}')
@@ -176,6 +187,22 @@ def send_extend_rejected(email: str, username: str, job_title: str) -> bool:
       <h2 style="color:#ef4444">Extension Rejected</h2>
       <p style="color:#374151">Hello <strong>{username}</strong>,</p>
       <p style="color:#374151">Your deadline extension request for <strong>"{job_title}"</strong> was rejected by admin.</p>
+    </div>
+    """)
+
+
+# ── Password Reset ────────────────────────────────────────────────────────────
+
+def send_password_reset_otp(email: str, username: str, otp: str) -> bool:
+    return _send(email, 'Password Reset OTP — JobPortal', f"""
+    <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f5f3ff;border-radius:16px">
+      <h2 style="color:#7c3aed;margin-bottom:8px">Reset Your Password</h2>
+      <p style="color:#374151">Hello <strong>{username}</strong>,</p>
+      <p style="color:#374151">Use the OTP below to reset your password. It expires in <strong>15 minutes</strong>.</p>
+      <div style="background:#fff;border-radius:12px;padding:24px;text-align:center;margin:20px 0;border:2px solid #ede9fe">
+        <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#7c3aed">{otp}</span>
+      </div>
+      <p style="color:#6b7280;font-size:13px">If you didn't request a password reset, you can safely ignore this email.</p>
     </div>
     """)
 
