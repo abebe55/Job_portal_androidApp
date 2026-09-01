@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
+import { requestPasswordReset, confirmPasswordReset } from '../../services/api';
 import { C } from '../../constants/theme';
 
 type Step = 'email' | 'otp';
@@ -26,7 +26,7 @@ export default function ForgotPasswordScreen() {
     if (!email.trim()) { setError('Please enter your email.'); return; }
     setLoading(true); setError('');
     try {
-      await api.post('/auth/password-reset/request/', { email: email.trim().toLowerCase() });
+      await requestPasswordReset(email.trim().toLowerCase());
       setSuccess(`OTP sent to ${email}. Check your inbox.`);
       setStep('otp');
     } catch (e: any) {
@@ -41,7 +41,7 @@ export default function ForgotPasswordScreen() {
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true); setError('');
     try {
-      await api.post('/auth/password-reset/confirm/', {
+      await confirmPasswordReset({
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
         new_password: newPassword,

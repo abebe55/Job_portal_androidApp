@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import { sendVerificationOTP, verifyEmailOTP } from '../../services/api';
 import { C } from '../../constants/theme';
 
 export default function VerifyEmailScreen() {
@@ -41,7 +41,7 @@ export default function VerifyEmailScreen() {
     setSending(true);
     setError('');
     try {
-      await api.post('/auth/send-otp/');
+      await sendVerificationOTP();
       const sentEmail = user?.email || email;
       setSuccess(sentEmail ? `OTP sent to ${sentEmail}` : 'OTP sent to your email');
       setCountdown(60);
@@ -56,7 +56,7 @@ export default function VerifyEmailScreen() {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/verify-otp/', { otp });
+      await verifyEmailOTP(otp);
       // Update context locally — no network call, no remount side-effects
       // AuthGuard will see email_verified=true and redirect automatically
       markEmailVerified();

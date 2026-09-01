@@ -294,12 +294,10 @@ export default function RegisterScreen() {
             fd.append(k, { uri: f.uri, name: f.name, type: f.type } as any);
           }
         }
-        await api.post('/auth/register/', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await registerMultipart(fd);
       } else {
         // Jobseeker: plain JSON, no files
-        await api.post('/auth/register/', {
+        await apiRegister({
           username: form.username.trim(),
           email: form.email.trim(),
           password: form.password,
