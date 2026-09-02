@@ -1,26 +1,15 @@
 """
-users/views.py — JobPortal authentication views (fixed architecture)
+users/views.py — JobPortal authentication views
 
-Registration flow:
-  POST /auth/register/
-    1. Validate input
-    2. Create user
-    3. Generate + store + send 6-digit OTP
-    4. Return 201 { user, requires_email_verification: true }
-  Frontend navigates to /verify-email?email=... (no auto-login)
-
-Verification (AllowAny — identified by email, not JWT):
-  POST /auth/send-otp/    body: { email }
-  POST /auth/verify-otp/  body: { email, otp }
-  On success → frontend calls /api/token/ to log in
-
-Password reset (fixed to use send_password_reset_otp):
-  POST /auth/password-reset/request/
-  POST /auth/password-reset/confirm/
-
-Login:
-  POST /api/token/ — blocks unverified emails with clear error
+Key architecture notes:
+- All user lookups use raw pymongo find_one({'email': ...})
+- User documents are identified by '_id' (ObjectId) — NOT 'id'
+- OTPs are stored with 'user_oid' = str(user_doc['_id']) for consistency
+- All datetimes stored as naive UTC, compared with datetime.utcnow()
 """
+
+import datetime as _dt
+import logging
 
 from rest_framework import generics, permissions, status, parsers, serializers as drf_serializers
 from rest_framework.response import Response
@@ -29,12 +18,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils import timezone
 from datetime import timedelta
-import logging
 
-logger = logging.getLogger('users')
-
-from .models import User, EmployerVerification, EmailVerificationOTP, generate_otp
-from .serializers import RegisterSerializer, UserSerializer, EmployerVerificationDetailSerializer
+from .models import User, EmployerVerification, generate_otp
+from .serializers import (
+    RegisterSerializer, UserSerializer, EmployerVerificationDetailSerializer,
+)
 from config.email_service import (
     send_email_verification_otp,
     send_password_reset_otp,
@@ -43,11 +31,12 @@ from config.email_service import (
     send_employer_rejected,
 )
 
+logger = logging.getLogger('users')
+
 
 # ── DB helper ─────────────────────────────────────────────────────────────────
 
 def _get_db():
-    """Return a stable MongoDB connection, retrying on cold-start failure."""
     import time
     from django.db import connections
     for attempt in range(3):
@@ -64,6 +53,21 @@ def _get_db():
     return db
 
 
+def _now_utc():
+    """Return current time as naive UTC datetime (for MongoDB storage)."""
+    return _dt.datetime.utcnow()
+
+
+def _expired(expires):
+    """Return True if the stored expires_at datetime has passed."""
+    if not expires:
+        return False
+    # Strip tz if somehow present — compare naive UTC
+    if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
+        expires = expires.replace(tzinfo=None)
+    return _dt.datetime.utcnow() > expires
+
+
 # ── Registration ──────────────────────────────────────────────────────────────
 
 class RegisterView(generics.CreateAPIView):
@@ -73,71 +77,66 @@ class RegisterView(generics.CreateAPIView):
     parser_classes     = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def create(self, request, *args, **kwargs):
-        logger.debug('[RegisterView] incoming data keys: %s', list(request.data.keys()))
+        serializer = self.get_serializer(data=request.data)
         try:
-            serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
         except Exception as exc:
-            logger.error('[RegisterView] validation error: %s', exc)
+            logger.error('[Register] validation: %s', exc)
             raise
 
         try:
             user = serializer.save()
-            logger.debug('[RegisterView] user created: id=%s username=%s', user.id, user.username)
+            logger.debug('[Register] user created username=%s', user.username)
         except Exception as exc:
-            logger.error('[RegisterView] serializer.save() failed: %s', exc, exc_info=True)
+            logger.error('[Register] save failed: %s', exc, exc_info=True)
             raise
 
-        # Generate + store OTP via raw pymongo — store naive UTC datetimes
-        otp      = generate_otp()
-        now_utc  = timezone.now().replace(tzinfo=None)  # naive UTC
-        expires_utc = now_utc + timedelta(minutes=15)
+        # Store + send OTP using raw pymongo
+        otp     = generate_otp()
+        now     = _now_utc()
+        expires = now + timedelta(minutes=15)
         try:
             db      = _get_db()
             otp_col = db.connection['users_emailverificationotp']
-            usr_col  = db.connection['users_user']
+            usr_col = db.connection['users_user']
+            # Find the just-created user document to get its _id
             user_doc = usr_col.find_one({'username': user.username})
-            user_int_id = user_doc['id'] if user_doc else str(user.id)
+            # Use string of ObjectId as user_oid — consistent key, no int needed
+            user_oid = str(user_doc['_id']) if user_doc else user.username
             otp_col.insert_one({
-                'user_id':    user_int_id,
-                'otp':        otp,
+                'user_oid':   user_oid,
                 'email':      user.email,
+                'otp':        otp,
                 'otp_type':   'email_verification',
                 'verified':   False,
-                'created_at': now_utc,
-                'expires_at': expires_utc,
+                'created_at': now,
+                'expires_at': expires,
             })
-            logger.debug('[RegisterView] OTP stored for user_id=%s email=%s', user_int_id, user.email)
+            logger.debug('[Register] OTP stored user_oid=%s', user_oid)
         except Exception as exc:
-            logger.error('[RegisterView] OTP store failed: %s', exc, exc_info=True)
-            # Don't fail registration — OTP can be re-requested via /send-otp/
+            logger.error('[Register] OTP store failed: %s', exc, exc_info=True)
 
-        # Send OTP email
         try:
             sent = send_email_verification_otp(user.email, user.username, otp)
-            logger.debug('[RegisterView] OTP email sent=%s to %s', sent, user.email)
+            logger.debug('[Register] OTP email sent=%s to %s', sent, user.email)
         except Exception as exc:
-            logger.error('[RegisterView] OTP email exception: %s', exc, exc_info=True)
+            logger.error('[Register] OTP email failed: %s', exc, exc_info=True)
 
-        # Safely serialize user.id — djongo may return ObjectId, convert to string
         try:
             user_id = int(user.id)
         except (TypeError, ValueError):
             user_id = str(user.id)
 
-        return Response(
-            {
-                'message': 'Account created. Please check your email for the verification code.',
-                'user': {
-                    'id':       user_id,
-                    'username': user.username,
-                    'email':    user.email,
-                    'role':     user.role,
-                },
-                'requires_email_verification': True,
+        return Response({
+            'message': 'Account created. Please check your email for the verification code.',
+            'user': {
+                'id':       user_id,
+                'username': user.username,
+                'email':    user.email,
+                'role':     user.role,
             },
-            status=status.HTTP_201_CREATED,
-        )
+            'requires_email_verification': True,
+        }, status=status.HTTP_201_CREATED)
 
 
 # ── Email verification (AllowAny) ─────────────────────────────────────────────
@@ -148,7 +147,6 @@ class SendVerificationOTPView(APIView):
 
     def post(self, request):
         email = (request.data.get('email') or '').strip().lower()
-        # Backwards compat: authenticated user may omit email
         if not email and request.user and request.user.is_authenticated:
             email = request.user.email
         if not email:
@@ -168,35 +166,39 @@ class SendVerificationOTPView(APIView):
         if user_doc.get('email_verified'):
             return Response({'message': 'Email is already verified.'})
 
-        # 60-second cooldown — compare naive UTC throughout
-        now_utc    = timezone.now().replace(tzinfo=None)  # naive UTC
-        cutoff_utc = now_utc - timedelta(seconds=60)
+        user_oid   = str(user_doc['_id'])
+        now        = _now_utc()
+        cutoff     = now - timedelta(seconds=60)
+
+        # 60-second cooldown
         recent = otp_col.find_one({
-            '$or': [
-                {'user_id': user_doc['id'],       'otp_type': 'email_verification', 'verified': False},
-                {'user_id': str(user_doc['id']),  'otp_type': 'email_verification', 'verified': False},
-            ],
-            'created_at': {'$gte': cutoff_utc},
+            'user_oid': user_oid,
+            'otp_type': 'email_verification',
+            'verified': False,
+            'created_at': {'$gte': cutoff},
         })
         if recent:
-            return Response({'message': f'A code was already sent to {email}. Please check your inbox or wait 60 seconds before requesting a new one.'})
+            return Response({
+                'message': f'A code was already sent to {email}. '
+                           f'Please check your inbox or wait 60 seconds.'
+            })
 
-        # Invalidate old OTPs
+        # Invalidate old OTPs for this user
         otp_col.update_many(
-            {'$or': [
-                {'user_id': user_doc['id'],      'otp_type': 'email_verification', 'verified': False},
-                {'user_id': str(user_doc['id']), 'otp_type': 'email_verification', 'verified': False},
-            ]},
+            {'user_oid': user_oid, 'otp_type': 'email_verification', 'verified': False},
             {'$set': {'verified': True}},
         )
 
-        otp        = generate_otp()
-        expires_utc = now_utc + timedelta(minutes=15)
-        # Always use raw pymongo — store naive UTC datetimes
+        otp     = generate_otp()
+        expires = now + timedelta(minutes=15)
         otp_col.insert_one({
-            'user_id': user_doc['id'], 'otp': otp, 'email': email,
-            'otp_type': 'email_verification', 'verified': False,
-            'created_at': now_utc, 'expires_at': expires_utc,
+            'user_oid':   user_oid,
+            'email':      email,
+            'otp':        otp,
+            'otp_type':   'email_verification',
+            'verified':   False,
+            'created_at': now,
+            'expires_at': expires,
         })
 
         sent = send_email_verification_otp(email, user_doc.get('username', ''), otp)
@@ -233,40 +235,27 @@ class VerifyEmailOTPView(APIView):
         if not user_doc:
             return Response({'error': 'Invalid code.'}, status=400)
 
+        user_oid = str(user_doc['_id'])
+
+        # Find matching OTP — try new user_oid key AND legacy user_id keys
         otp_doc = otp_col.find_one(
             {'$or': [
-                {'user_id': user_doc['id'],      'otp': otp_input,
-                 'otp_type': 'email_verification', 'verified': False},
-                {'user_id': str(user_doc['id']), 'otp': otp_input,
-                 'otp_type': 'email_verification', 'verified': False},
+                {'user_oid': user_oid,    'otp': otp_input, 'otp_type': 'email_verification', 'verified': False},
+                {'email':    email,        'otp': otp_input, 'otp_type': 'email_verification', 'verified': False},
             ]},
             sort=[('created_at', -1)],
         )
         if not otp_doc:
             return Response({'error': 'Invalid code.'}, status=400)
 
-        from datetime import timezone as dt_tz
-        import datetime as _dt
-        expires = otp_doc.get('expires_at')
-        if expires:
-            # MongoDB stores naive datetimes — compare as naive UTC
-            if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
-                expires = expires.replace(tzinfo=None)  # strip tz if somehow present
-            now_naive = _dt.datetime.utcnow()  # always naive UTC
-            if now_naive > expires:
-                return Response(
-                    {'error': 'Code has expired. Please request a new one.'}, status=400)
+        if _expired(otp_doc.get('expires_at')):
+            return Response({'error': 'Code has expired. Please request a new one.'}, status=400)
 
         otp_col.update_one({'_id': otp_doc['_id']}, {'$set': {'verified': True}})
         usr_col.update_one({'_id': user_doc['_id']}, {'$set': {'email_verified': True}})
 
-        # Send welcome email now that email is confirmed
         try:
-            send_welcome_email(
-                email,
-                user_doc.get('username', ''),
-                user_doc.get('role', 'jobseeker'),
-            )
+            send_welcome_email(email, user_doc.get('username', ''), user_doc.get('role', 'jobseeker'))
         except Exception:
             pass
 
@@ -298,30 +287,30 @@ class PasswordResetRequestView(APIView):
         if not user_doc:
             return Response({'message': 'If that email is registered, an OTP has been sent.'})
 
+        user_oid = str(user_doc['_id'])
         otp      = generate_otp()
-        now_utc  = timezone.now().replace(tzinfo=None)
-        expires_utc = now_utc + timedelta(minutes=15)
+        now      = _now_utc()
+        expires  = now + timedelta(minutes=15)
 
+        # Invalidate old password-reset OTPs
         otp_col.update_many(
-            {'$or': [
-                {'user_id': user_doc['id'],      'otp_type': 'password_reset', 'verified': False},
-                {'user_id': str(user_doc['id']), 'otp_type': 'password_reset', 'verified': False},
-            ]},
+            {'user_oid': user_oid, 'otp_type': 'password_reset', 'verified': False},
             {'$set': {'verified': True}},
         )
 
-        # Always use raw pymongo — store naive UTC datetimes
         otp_col.insert_one({
-            'user_id': user_doc['id'], 'otp': otp, 'email': email,
-            'otp_type': 'password_reset', 'verified': False,
-            'created_at': now_utc, 'expires_at': expires_utc,
+            'user_oid':   user_oid,
+            'email':      email,
+            'otp':        otp,
+            'otp_type':   'password_reset',
+            'verified':   False,
+            'created_at': now,
+            'expires_at': expires,
         })
 
-        # ✅ Use password-reset template
         sent = send_password_reset_otp(email, user_doc.get('username', ''), otp)
         if not sent:
-            return Response(
-                {'error': 'Unable to send reset email. Please try again.'}, status=503)
+            return Response({'error': 'Unable to send reset email. Please try again.'}, status=503)
 
         return Response({'message': 'If that email is registered, an OTP has been sent.'})
 
@@ -335,14 +324,11 @@ class PasswordResetConfirmView(APIView):
         new_password = (request.data.get('new_password') or '').strip()
 
         if not email or not otp_input or not new_password:
-            return Response(
-                {'error': 'Email, OTP, and new password are required.'}, status=400)
+            return Response({'error': 'Email, OTP, and new password are required.'}, status=400)
         if len(new_password) < 8:
-            return Response(
-                {'error': 'Password must be at least 8 characters.'}, status=400)
+            return Response({'error': 'Password must be at least 8 characters.'}, status=400)
 
         from django.contrib.auth.hashers import make_password
-        import datetime as _dt
 
         try:
             db      = _get_db()
@@ -355,31 +341,24 @@ class PasswordResetConfirmView(APIView):
         if not user_doc:
             return Response({'error': 'Invalid OTP.'}, status=400)
 
+        user_oid = str(user_doc['_id'])
+
         otp_doc = otp_col.find_one(
             {'$or': [
-                {'user_id': user_doc['id'],      'otp': otp_input,
-                 'otp_type': 'password_reset', 'verified': False},
-                {'user_id': str(user_doc['id']), 'otp': otp_input,
-                 'otp_type': 'password_reset', 'verified': False},
+                {'user_oid': user_oid, 'otp': otp_input, 'otp_type': 'password_reset', 'verified': False},
+                {'email': email,       'otp': otp_input, 'otp_type': 'password_reset', 'verified': False},
             ]},
             sort=[('created_at', -1)],
         )
         if not otp_doc:
             return Response({'error': 'Invalid or expired OTP.'}, status=400)
 
-        expires = otp_doc.get('expires_at')
-        if expires:
-            if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
-                expires = expires.replace(tzinfo=None)
-            if _dt.datetime.utcnow() > expires:
-                return Response(
-                    {'error': 'OTP has expired. Please request a new one.'}, status=400)
+        if _expired(otp_doc.get('expires_at')):
+            return Response({'error': 'OTP has expired. Please request a new one.'}, status=400)
 
         otp_col.update_one({'_id': otp_doc['_id']}, {'$set': {'verified': True}})
-        usr_col.update_one(
-            {'_id': user_doc['_id']},
-            {'$set': {'password': make_password(new_password)}},
-        )
+        usr_col.update_one({'_id': user_doc['_id']}, {'$set': {'password': make_password(new_password)}})
+
         return Response({'message': 'Password reset successfully. You can now log in.'})
 
 
@@ -397,7 +376,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         user = self.user
 
-        # ✅ Block login for unverified email
         if not user.email_verified:
             raise drf_serializers.ValidationError(
                 'Please verify your email address before logging in. '
@@ -432,7 +410,9 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         try:
             db  = _get_db()
             col = db.connection['users_user']
-            doc = col.find_one({'id': request.user.id})
+            # Try integer id first, then username fallback
+            doc = col.find_one({'id': request.user.id}) or \
+                  col.find_one({'username': request.user.username})
         except Exception:
             return super().retrieve(request, *args, **kwargs)
 
@@ -444,7 +424,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         photo_url = f"{BASE}/media/{photo}" if photo else None
 
         return Response({
-            'id':                 doc.get('id'),
+            'id':                 doc.get('id') or str(doc.get('_id')),
             'username':           doc.get('username', ''),
             'email':              doc.get('email', ''),
             'role':               doc.get('role', 'jobseeker'),
@@ -515,11 +495,9 @@ class AdminEmployerVerificationListView(APIView):
         usr_col = db.connection['users_user']
 
         status_filter = request.query_params.get('status')
-        query = {}
-        if status_filter:
-            query['status'] = status_filter
+        query = {'status': status_filter} if status_filter else {}
 
-        all_docs    = list(ev_col.find(query).sort('submitted_at', -1))
+        all_docs     = list(ev_col.find(query).sort('submitted_at', -1))
         seen, unique = set(), []
         for doc in all_docs:
             uid = doc.get('user_id')
@@ -541,9 +519,7 @@ class AdminEmployerVerificationListView(APIView):
             uid = doc.get('user_id')
             u   = users.get(uid, {})
             results.append({
-                'user_id':             uid,
-                'id':                  uid,
-                'pk':                  uid,
+                'user_id':             uid, 'id': uid, 'pk': uid,
                 'username':            u.get('username', ''),
                 'email':               u.get('email', ''),
                 'phone':               u.get('phone', ''),
@@ -587,15 +563,16 @@ class AdminEmployerVerificationDetailView(APIView):
         db         = _get_db()
         col        = db.connection['users_employerverification']
         new_status = 'approved' if action == 'approve' else 'rejected'
+        now        = timezone.now()
 
         result = col.update_one(
             {'user_id': user_id, 'status': 'pending'},
-            {'$set': {'status': new_status, 'admin_note': note, 'reviewed_at': timezone.now()}},
+            {'$set': {'status': new_status, 'admin_note': note, 'reviewed_at': now}},
         )
         if result.matched_count == 0:
             col.update_one(
                 {'user_id': user_id},
-                {'$set': {'status': new_status, 'admin_note': note, 'reviewed_at': timezone.now()}},
+                {'$set': {'status': new_status, 'admin_note': note, 'reviewed_at': now}},
             )
 
         try:
@@ -609,7 +586,4 @@ class AdminEmployerVerificationDetailView(APIView):
         except Exception:
             pass
 
-        return Response({
-            'message': f'Employer {new_status} successfully.',
-            'status':  new_status,
-        })
+        return Response({'message': f'Employer {new_status} successfully.', 'status': new_status})
