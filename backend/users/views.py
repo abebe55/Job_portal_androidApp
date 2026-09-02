@@ -88,31 +88,48 @@ class RegisterView(generics.CreateAPIView):
             logger.error('[RegisterView] serializer.save() failed: %s', exc, exc_info=True)
             raise
 
-        # Generate + store verification OTP immediately after user creation
+        # Generate + store OTP via raw pymongo to avoid djongo ObjectId/int mismatch
         otp     = generate_otp()
         expires = timezone.now() + timedelta(minutes=15)
         try:
-            EmailVerificationOTP.objects.create(
-                user=user, otp=otp, email=user.email,
-                otp_type='email_verification', expires_at=expires,
-            )
-            logger.debug('[RegisterView] OTP created for %s', user.email)
+            db      = _get_db()
+            otp_col = db.connection['users_emailverificationotp']
+            # Get the real integer user id from the users collection
+            usr_col  = db.connection['users_user']
+            user_doc = usr_col.find_one({'username': user.username})
+            user_int_id = user_doc['id'] if user_doc else str(user.id)
+            otp_col.insert_one({
+                'user_id':    user_int_id,
+                'otp':        otp,
+                'email':      user.email,
+                'otp_type':   'email_verification',
+                'verified':   False,
+                'created_at': timezone.now(),
+                'expires_at': expires,
+            })
+            logger.debug('[RegisterView] OTP stored for user_id=%s email=%s', user_int_id, user.email)
         except Exception as exc:
-            logger.error('[RegisterView] OTP create failed: %s', exc, exc_info=True)
-            # Don't fail registration — OTP can be re-requested
+            logger.error('[RegisterView] OTP store failed: %s', exc, exc_info=True)
+            # Don't fail registration — OTP can be re-requested via /send-otp/
 
-        # Send OTP — welcome email is sent after successful verification
+        # Send OTP email
         try:
             sent = send_email_verification_otp(user.email, user.username, otp)
             logger.debug('[RegisterView] OTP email sent=%s to %s', sent, user.email)
         except Exception as exc:
             logger.error('[RegisterView] OTP email exception: %s', exc, exc_info=True)
 
+        # Safely serialize user.id — djongo may return ObjectId, convert to string
+        try:
+            user_id = int(user.id)
+        except (TypeError, ValueError):
+            user_id = str(user.id)
+
         return Response(
             {
                 'message': 'Account created. Please check your email for the verification code.',
                 'user': {
-                    'id':       user.id,
+                    'id':       user_id,
                     'username': user.username,
                     'email':    user.email,
                     'role':     user.role,
@@ -175,18 +192,12 @@ class SendVerificationOTPView(APIView):
 
         otp     = generate_otp()
         expires = now + timedelta(minutes=15)
-        try:
-            user_obj = User.objects.get(id=user_doc['id'])
-            EmailVerificationOTP.objects.create(
-                user=user_obj, otp=otp, email=email,
-                otp_type='email_verification', expires_at=expires,
-            )
-        except Exception:
-            otp_col.insert_one({
-                'user_id': user_doc['id'], 'otp': otp, 'email': email,
-                'otp_type': 'email_verification', 'verified': False,
-                'created_at': now, 'expires_at': expires,
-            })
+        # Always use raw pymongo — avoids djongo ObjectId/int FK mismatch
+        otp_col.insert_one({
+            'user_id': user_doc['id'], 'otp': otp, 'email': email,
+            'otp_type': 'email_verification', 'verified': False,
+            'created_at': now, 'expires_at': expires,
+        })
 
         sent = send_email_verification_otp(email, user_doc.get('username', ''), otp)
         if not sent:
@@ -295,20 +306,14 @@ class PasswordResetRequestView(APIView):
             {'$set': {'verified': True}},
         )
 
-        try:
-            user_obj = User.objects.get(id=user_doc['id'])
-            EmailVerificationOTP.objects.create(
-                user=user_obj, otp=otp, email=email,
-                otp_type='password_reset', expires_at=expires,
-            )
-        except Exception:
-            otp_col.insert_one({
-                'user_id': user_doc['id'], 'otp': otp, 'email': email,
-                'otp_type': 'password_reset', 'verified': False,
-                'created_at': timezone.now(), 'expires_at': expires,
-            })
+        # Always use raw pymongo — avoids djongo ObjectId/int FK mismatch
+        otp_col.insert_one({
+            'user_id': user_doc['id'], 'otp': otp, 'email': email,
+            'otp_type': 'password_reset', 'verified': False,
+            'created_at': timezone.now(), 'expires_at': expires,
+        })
 
-        # ✅ Use password-reset template (was wrongly calling email_verification)
+        # ✅ Use password-reset template
         sent = send_password_reset_otp(email, user_doc.get('username', ''), otp)
         if not sent:
             return Response(
