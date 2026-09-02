@@ -29,6 +29,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils import timezone
 from datetime import timedelta
+import logging
+
+logger = logging.getLogger('users')
 
 from .models import User, EmployerVerification, EmailVerificationOTP, generate_otp
 from .serializers import RegisterSerializer, UserSerializer, EmployerVerificationDetailSerializer
@@ -70,9 +73,20 @@ class RegisterView(generics.CreateAPIView):
     parser_classes     = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        logger.debug('[RegisterView] incoming data keys: %s', list(request.data.keys()))
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+        except Exception as exc:
+            logger.error('[RegisterView] validation error: %s', exc)
+            raise
+
+        try:
+            user = serializer.save()
+            logger.debug('[RegisterView] user created: id=%s username=%s', user.id, user.username)
+        except Exception as exc:
+            logger.error('[RegisterView] serializer.save() failed: %s', exc, exc_info=True)
+            raise
 
         # Generate + store verification OTP immediately after user creation
         otp     = generate_otp()
@@ -82,14 +96,17 @@ class RegisterView(generics.CreateAPIView):
                 user=user, otp=otp, email=user.email,
                 otp_type='email_verification', expires_at=expires,
             )
-        except Exception:
-            pass  # OTP can be re-requested; don't fail the registration
+            logger.debug('[RegisterView] OTP created for %s', user.email)
+        except Exception as exc:
+            logger.error('[RegisterView] OTP create failed: %s', exc, exc_info=True)
+            # Don't fail registration — OTP can be re-requested
 
         # Send OTP — welcome email is sent after successful verification
         try:
-            send_email_verification_otp(user.email, user.username, otp)
-        except Exception:
-            pass
+            sent = send_email_verification_otp(user.email, user.username, otp)
+            logger.debug('[RegisterView] OTP email sent=%s to %s', sent, user.email)
+        except Exception as exc:
+            logger.error('[RegisterView] OTP email exception: %s', exc, exc_info=True)
 
         return Response(
             {
