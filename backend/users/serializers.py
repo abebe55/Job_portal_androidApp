@@ -169,6 +169,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'detail': 'Registration failed due to a database error. Please try again.'})
 
+        try:
+            from .authentication import ensure_numeric_user_id
+            ensure_numeric_user_id(user)
+        except Exception:
+            pass
+
         # ── Employer verification docs (best-effort, idempotent) ──────────────
         if user.role == 'employer' and emp_data.get('employer_type'):
             try:

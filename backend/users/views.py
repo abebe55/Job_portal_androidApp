@@ -20,6 +20,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from .models import User, EmployerVerification, generate_otp
+from .authentication import ensure_numeric_user_id
 from .serializers import (
     RegisterSerializer, UserSerializer, EmployerVerificationDetailSerializer,
 )
@@ -372,6 +373,16 @@ class IsAdmin(permissions.BasePermission):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        ensure_numeric_user_id(user)
+        token = super().get_token(user)
+        token['username'] = user.username
+        # Never persist the string "None" — SimpleJWT stringifies a missing pk.
+        if token.get('user_id') in (None, 'None') or user.pk is None:
+            token['user_id'] = user.username
+        return token
+
     def validate(self, attrs):
         data = super().validate(attrs)
         user = self.user
