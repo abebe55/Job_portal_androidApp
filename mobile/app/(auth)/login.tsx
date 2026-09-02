@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { C } from '../../constants/theme';
+import { getItem } from '../../utils/storage';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -33,9 +34,21 @@ export default function LoginScreen() {
       const msg =
         e?.response?.data?.detail ||
         e?.response?.data?.non_field_errors?.[0] ||
+        (Array.isArray(e?.response?.data) ? e.response.data[0] : '') ||
         e?.message ||
         t('invalidCredentials');
-      setError(msg);
+      const text = String(msg);
+      if (text.toLowerCase().includes('verify your email')) {
+        const pending = (await getItem('pending_verify_email')) || '';
+        if (pending) {
+          setLoading(false);
+          router.replace(
+            `/(auth)/verify-email?email=${encodeURIComponent(pending)}` as any,
+          );
+          return;
+        }
+      }
+      setError(text);
     }
     setLoading(false);
   };

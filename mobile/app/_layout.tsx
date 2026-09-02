@@ -39,10 +39,10 @@ function AuthGuard() {
 
       // Unverified user trying to access app — send to verify-email
       if (!user.email_verified && !inAuth) {
-        router.replace({
-          pathname: '/(auth)/verify-email',
-          params: { email: user.email },
-        } as any);
+        const email = (user.email || '').trim().toLowerCase();
+        router.replace(
+          `/(auth)/verify-email?email=${encodeURIComponent(email)}` as any,
+        );
         return;
       }
 

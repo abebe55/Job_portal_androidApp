@@ -9,7 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { C } from '../../constants/theme';
 import { register as apiRegister, registerMultipart } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+import { saveItem } from '../../utils/storage';
 // ── Employer types with their required docs ───────────────────────────────────
 const EMPLOYER_TYPES = [
   {
@@ -204,7 +204,6 @@ function UploadBtn({ docKey, files, setFiles }: { docKey: string; files: any; se
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function RegisterScreen() {
   const router = useRouter();
-  useAuth(); // keep provider in scope for future use
 
   // Step: 'role' | 'basic' | 'employer_type' | 'employer_docs'
   const [step, setStep]           = useState<'role' | 'basic' | 'employer_type' | 'employer_docs'>('role');
@@ -311,14 +310,15 @@ export default function RegisterScreen() {
           ? 'Account created! A verification code has been sent to your email.'
           : 'Account created! A verification code has been sent to your email.'
       );
-      // Navigate directly to verify-email — no auto-login needed.
-      // Backend already sent the OTP during registration.
-      // User logs in AFTER verifying email.
-      const email = form.email.trim();
-      setTimeout(() => router.replace({
-        pathname: '/(auth)/verify-email',
-        params: { email },
-      } as any), 800);
+      // Persist email: Expo Router on web often drops route params (URL is
+      // /verify-email with no query), so verify/resend would POST without email.
+      const email = form.email.trim().toLowerCase();
+      await saveItem('pending_verify_email', email);
+      setTimeout(() => {
+        router.replace(
+          `/(auth)/verify-email?email=${encodeURIComponent(email)}&sent=1` as any,
+        );
+      }, 800);
     } catch (e: any) {
       const d = e?.response?.data;
       setError(

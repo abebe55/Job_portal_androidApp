@@ -12,7 +12,7 @@
  *   3. POST /auth/verify-otp/ { email, otp }
  *   4. On success → user logs in via /api/token/ → navigated to tabs
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
@@ -21,23 +21,47 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { sendVerificationOTP, verifyEmailOTP } from '../../services/api';
+import { getItem, saveItem, removeItem } from '../../utils/storage';
 import { C } from '../../constants/theme';
+
+function firstParam(v?: string | string[]) {
+  if (Array.isArray(v)) return (v[0] || '').trim();
+  return (v || '').trim();
+}
 
 export default function VerifyEmailScreen() {
   const router                        = useRouter();
-  const params                        = useLocalSearchParams<{ email?: string }>();
-  const { user, login, markEmailVerified } = useAuth();
+  const params                        = useLocalSearchParams<{ email?: string | string[]; sent?: string | string[] }>();
+  const { user, markEmailVerified } = useAuth();
 
-  // Resolve email: prefer route param (just registered), fall back to auth context
-  const resolvedEmail = (params.email || user?.email || '').trim().toLowerCase();
-
+  const [email, setEmail]         = useState(() =>
+    firstParam(params.email).toLowerCase() || (user?.email || '').trim().toLowerCase()
+  );
   const [otp, setOtp]             = useState('');
   const [loading, setLoading]     = useState(false);
   const [sending, setSending]     = useState(false);
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState('');
-  const [countdown, setCountdown] = useState(0);
-  const hasSentRef                = useRef(false);
+  const [countdown, setCountdown] = useState(() => firstParam(params.sent) === '1' ? 60 : 0);
+
+  // Recover email from route / session / storage — Expo web often drops params.
+  useEffect(() => {
+    const fromParams = firstParam(params.email).toLowerCase();
+    if (fromParams) {
+      setEmail(fromParams);
+      saveItem('pending_verify_email', fromParams);
+      return;
+    }
+    if (user?.email) {
+      const fromUser = user.email.trim().toLowerCase();
+      setEmail(fromUser);
+      saveItem('pending_verify_email', fromUser);
+      return;
+    }
+    getItem('pending_verify_email').then(stored => {
+      if (stored?.trim()) setEmail(stored.trim().toLowerCase());
+    });
+  }, [params.email, user?.email]);
 
   // Countdown timer
   useEffect(() => {
@@ -46,28 +70,18 @@ export default function VerifyEmailScreen() {
     return () => clearTimeout(t);
   }, [countdown]);
 
-  // If the OTP was already sent by RegisterView we don't need to send again on mount.
-  // Only auto-send if we arrive here from AuthGuard (no email param = already-registered user).
-  useEffect(() => {
-    if (hasSentRef.current) return;
-    hasSentRef.current = true;
-    // Don't re-send if user just registered (email param present = OTP already sent)
-    if (!params.email && resolvedEmail) {
-      sendOtp();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const sendOtp = async () => {
-    if (!resolvedEmail) {
-      setError('Email address not found. Please go back and try again.');
+  const sendOtp = async (overrideEmail?: string) => {
+    const to = (overrideEmail || email).trim().toLowerCase();
+    if (!to) {
+      setError('Enter the email you registered with, then tap Resend OTP.');
       return;
     }
     setSending(true);
     setError('');
     try {
-      await sendVerificationOTP(resolvedEmail);
-      setSuccess(`Verification code sent to ${resolvedEmail}`);
+      await saveItem('pending_verify_email', to);
+      await sendVerificationOTP(to);
+      setSuccess(`Verification code sent to ${to}`);
       setCountdown(60);
     } catch (e: any) {
       const data = e?.response?.data;
@@ -75,7 +89,7 @@ export default function VerifyEmailScreen() {
       // Treat any non-error response (200/503 with message) as informational
       if (e?.response?.status === 200 || msg.toLowerCase().includes('already sent') ||
           msg.toLowerCase().includes('wait') || msg.toLowerCase().includes('check your inbox')) {
-        setSuccess(msg || `Code already sent to ${resolvedEmail}. Check your inbox.`);
+        setSuccess(msg || `Code already sent to ${to}. Check your inbox.`);
         setCountdown(60);
       } else if (e?.response?.status === 503) {
         // Backend couldn't send — show error but don't block UI
@@ -88,8 +102,9 @@ export default function VerifyEmailScreen() {
   };
 
   const handleVerify = async () => {
-    if (!resolvedEmail) {
-      setError('Email address not found. Please go back and try again.');
+    const to = email.trim().toLowerCase();
+    if (!to) {
+      setError('Enter the email you registered with, then tap Verify Email.');
       return;
     }
     if (otp.length !== 6) {
@@ -99,7 +114,8 @@ export default function VerifyEmailScreen() {
     setLoading(true);
     setError('');
     try {
-      await verifyEmailOTP(resolvedEmail, otp);
+      await verifyEmailOTP(to, otp);
+      await removeItem('pending_verify_email');
 
       // Email verified — now log in if we have credentials in context,
       // or if user is already authenticated, just update the flag.
@@ -122,7 +138,7 @@ export default function VerifyEmailScreen() {
     // Don't setLoading(false) on success path — AuthGuard navigates away
   };
 
-  const displayEmail = resolvedEmail || '…';
+  const displayEmail = email.trim() || '…';
 
   return (
     <KeyboardAvoidingView
@@ -160,6 +176,22 @@ export default function VerifyEmailScreen() {
             </View>
           ) : null}
 
+          {!email.trim() ? (
+            <View style={s.otpWrap}>
+              <Ionicons name="mail-outline" size={16} color={C.textSub} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[s.otpInput, { letterSpacing: 0, fontSize: 15, fontWeight: '500', textAlign: 'left' }]}
+                value={email}
+                onChangeText={v => { setEmail(v.trim().toLowerCase()); setError(''); }}
+                placeholder="Email you registered with"
+                placeholderTextColor={C.textSub}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          ) : null}
+
           {/* OTP input */}
           <View style={s.otpWrap}>
             <Ionicons name="keypad-outline" size={16} color={C.textSub} style={{ marginRight: 8 }} />
@@ -191,13 +223,13 @@ export default function VerifyEmailScreen() {
           {/* Resend */}
           <TouchableOpacity
             style={[s.resendBtn, (sending || countdown > 0) && { opacity: 0.5 }]}
-            onPress={sendOtp}
+            onPress={() => sendOtp()}
             disabled={sending || countdown > 0}
           >
             {sending
               ? <ActivityIndicator color={C.primary} size="small" />
               : <Text style={s.resendText}>
-                  {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend code'}
+                  {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
                 </Text>
             }
           </TouchableOpacity>
