@@ -122,6 +122,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        import time
+        from django.db import connections
+
         employer_fields = [
             'employer_type', 'employer_type_other', 'organization_name',
             'business_license', 'tin_certificate', 'registration_cert',
@@ -130,35 +133,74 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
         emp_data = {k: validated_data.pop(k, None) for k in employer_fields}
 
-        try:
-            user = User.objects.create_user(
-                username=validated_data['username'],
-                email=validated_data['email'],
-                password=validated_data['password'],
-                role=validated_data.get('role', 'jobseeker'),
-                phone=validated_data.get('phone', ''),
-                location=validated_data.get('location', ''),
-                is_approved=validated_data.get('role', 'jobseeker') != 'employer',
-            )
-        except DatabaseError:
+        username = validated_data['username']
+        email    = validated_data['email']
+        role     = validated_data.get('role', 'jobseeker')
+
+        # ── Create user with retry on cold-start DB failure ───────────────────
+        user = None
+        last_exc = None
+        for attempt in range(3):
+            try:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=validated_data['password'],
+                    role=role,
+                    phone=validated_data.get('phone', ''),
+                    location=validated_data.get('location', ''),
+                    is_approved=role != 'employer',
+                )
+                break  # success
+            except DatabaseError as exc:
+                last_exc = exc
+                # Check if user was actually created despite the error
+                try:
+                    connections['default'].close()
+                    time.sleep(0.5 * (attempt + 1))
+                    existing = User.objects.filter(username=username).first()
+                    if existing:
+                        user = existing
+                        break
+                except Exception:
+                    pass
+            except Exception as exc:
+                last_exc = exc
+                try:
+                    connections['default'].close()
+                    time.sleep(0.5 * (attempt + 1))
+                    existing = User.objects.filter(username=username).first()
+                    if existing:
+                        user = existing
+                        break
+                except Exception:
+                    pass
+
+        if user is None:
             raise serializers.ValidationError(
-                {'detail': 'Registration failed. Username or email may already exist.'}
+                {'detail': 'Registration failed. Please try again.'}
             )
 
+        # ── Create employer verification docs (best-effort) ───────────────────
         if user.role == 'employer' and emp_data.get('employer_type'):
-            EmployerVerification.objects.create(
-                user=user,
-                employer_type=emp_data.get('employer_type') or '',
-                employer_type_other=emp_data.get('employer_type_other') or '',
-                organization_name=emp_data.get('organization_name') or '',
-                business_license=emp_data.get('business_license'),
-                tin_certificate=emp_data.get('tin_certificate'),
-                registration_cert=emp_data.get('registration_cert'),
-                national_id_front=emp_data.get('national_id_front'),
-                national_id_back=emp_data.get('national_id_back'),
-                national_id_number=emp_data.get('national_id_number') or '',
-                supporting_doc=emp_data.get('supporting_doc'),
-            )
+            try:
+                # Don't create duplicate if already exists
+                if not EmployerVerification.objects.filter(user=user).exists():
+                    EmployerVerification.objects.create(
+                        user=user,
+                        employer_type=emp_data.get('employer_type') or '',
+                        employer_type_other=emp_data.get('employer_type_other') or '',
+                        organization_name=emp_data.get('organization_name') or '',
+                        business_license=emp_data.get('business_license'),
+                        tin_certificate=emp_data.get('tin_certificate'),
+                        registration_cert=emp_data.get('registration_cert'),
+                        national_id_front=emp_data.get('national_id_front'),
+                        national_id_back=emp_data.get('national_id_back'),
+                        national_id_number=emp_data.get('national_id_number') or '',
+                        supporting_doc=emp_data.get('supporting_doc'),
+                    )
+            except Exception:
+                pass  # verification can be re-submitted; don't fail registration
 
         return user
 

@@ -174,13 +174,19 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        # Only send welcome email here — OTP is sent by the verify-email screen via /send-otp/
+        # Send welcome email — never crash the response
         try:
             send_welcome_email(user.email, user.username, user.role)
         except Exception:
             pass
+        return Response(
+            {'id': user.id, 'username': user.username, 'email': user.email, 'role': user.role},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 # ── Profile ──────────────────────────────────────────────────────────────────
