@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getMyApplications } from '../../services/api';
 import PageHeader from '../../components/PageHeader';
+import WebLayout from '../../components/WebLayout';
 import { C, S } from '../../constants/theme';
 
 const STATUS: Record<string, { color: string; bg: string; icon: string; label: string; desc: string }> = {
@@ -45,13 +46,16 @@ export default function ApplicationsScreen() {
   }, []);
 
   if (loading) return (
-    <View style={S.page}>
-      <PageHeader title="My Applications" />
-      <ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} />
-    </View>
+    <WebLayout title="My Applications" subtitle="Track your job applications">
+      <View style={S.page}>
+        <PageHeader title="My Applications" />
+        <ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} />
+      </View>
+    </WebLayout>
   );
 
   return (
+    <WebLayout title="My Applications" subtitle="Track your job applications">
     <View style={S.page}>
       <PageHeader title="My Applications" />
       <FlatList
@@ -157,6 +161,7 @@ export default function ApplicationsScreen() {
         }
       />
     </View>
+    </WebLayout>
   );
 }
 

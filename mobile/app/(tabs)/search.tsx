@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getJobs } from '../../services/api';
 import PageHeader from '../../components/PageHeader';
+import WebLayout from '../../components/WebLayout';
 import { C, S } from '../../constants/theme';
 
 const JOB_TYPE_COLOR: Record<string, string> = {
@@ -39,6 +40,7 @@ export default function SearchScreen() {
   };
 
   return (
+    <WebLayout title="Search Jobs" subtitle="Find your next opportunity">
     <View style={S.page}>
       <PageHeader title="Search Jobs" />
 
@@ -132,6 +134,7 @@ export default function SearchScreen() {
         }
       />
     </View>
+    </WebLayout>
   );
 }
 

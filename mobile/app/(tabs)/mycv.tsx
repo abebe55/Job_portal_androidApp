@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getCV, updateCV } from '../../services/api';
 import PageHeader from '../../components/PageHeader';
+import WebLayout from '../../components/WebLayout';
 import { C, S } from '../../constants/theme';
 
 const BASE = 'http://127.0.0.1:8000';
@@ -138,9 +139,14 @@ export default function MyCVScreen() {
     setSaving(false);
   };
 
-  if (loading) return <View style={S.page}><PageHeader title="My CV" /><ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} /></View>;
+  if (loading) return (
+    <WebLayout title="My CV" subtitle="Your professional profile">
+      <View style={S.page}><PageHeader title="My CV" /><ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} /></View>
+    </WebLayout>
+  );
 
   if (!cv || (!cv.first_name && !cv.full_name)) return (
+    <WebLayout title="My CV" subtitle="Your professional profile">
     <View style={S.page}>
       <PageHeader title="My CV" />
       <View style={st.empty}>
@@ -153,6 +159,7 @@ export default function MyCVScreen() {
         </TouchableOpacity>
       </View>
     </View>
+    </WebLayout>
   );
 
   const fullName = [cv.first_name, cv.father_name, cv.grandfather_name].filter(Boolean).join(' ') || cv.full_name;
@@ -171,6 +178,7 @@ export default function MyCVScreen() {
   const LANG_COLOR: any = { 'Native':'#16a34a','Excellent':'#2563eb','Very Good':'#7c3aed','Good':'#d97706','Fair':'#6b7280','Basic':'#9ca3af' };
 
   return (
+    <WebLayout title="My CV" subtitle="Your professional profile">
     <View style={[S.page, { backgroundColor: '#f3f4f6' }]}>
       <PageHeader title="My CV" />
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
@@ -400,6 +408,7 @@ export default function MyCVScreen() {
       </ScrollView>
       <Toast visible={toastVisible} type={toastType} message={toastMsg} />
     </View>
+    </WebLayout>
   );
 }
 

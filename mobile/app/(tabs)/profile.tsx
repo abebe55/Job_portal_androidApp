@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { C, S } from '../../constants/theme';
+import WebLayout from '../../components/WebLayout';
 
 type MenuItem = { icon: string; label: string; path: string; color?: string };
 
@@ -47,6 +48,7 @@ export default function ProfileScreen() {
   const initials = (user?.username?.[0] ?? 'U').toUpperCase();
 
   return (
+    <WebLayout title={t('profile')} subtitle="Manage your account">
     <ScrollView
       style={S.page}
       contentContainerStyle={[S.content, { paddingTop: 16 }]}
@@ -129,6 +131,7 @@ export default function ProfileScreen() {
         <Ionicons name="chevron-forward" size={16} color={C.danger} />
       </TouchableOpacity>
     </ScrollView>
+    </WebLayout>
   );
 }
 

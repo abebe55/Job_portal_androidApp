@@ -8,6 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { getCV, updateCV } from '../../services/api';
 import PageHeader from '../../components/PageHeader';
+import WebLayout from '../../components/WebLayout';
 import { C, S } from '../../constants/theme';
 
 // ── Ethiopian skill/profession categories ─────────────────────────────────────
@@ -448,13 +449,18 @@ export default function CVScreen() {
     setSaving(false);
   };
 
-  if (loading) return <View style={S.page}><PageHeader title="Create CV" /><ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} /></View>;
+  if (loading) return (
+    <WebLayout title="Create CV" subtitle="Build your professional profile">
+      <View style={S.page}><PageHeader title="Create CV" /><ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} /></View>
+    </WebLayout>
+  );
 
   const cat = SKILL_CATEGORIES.find(c => c.key === cv.skill_category);
   const catSkills = cv.skill_category ? CATEGORY_SKILLS[cv.skill_category] || [] : [];
   const needsEdu = !['driver','security','cleaning','cooking','construction','agriculture'].includes(cv.skill_category || '');
 
   return (
+    <WebLayout title="Create CV" subtitle="Build your professional profile">
     <View style={S.page}>
       <PageHeader title="Create CV" />
 
@@ -947,6 +953,7 @@ export default function CVScreen() {
       </ScrollView>
       <Toast visible={toastVisible} type={toastType} message={toastMsg} />
     </View>
+    </WebLayout>
   );
 }
 

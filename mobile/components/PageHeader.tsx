@@ -1,5 +1,15 @@
+/**
+ * PageHeader
+ *
+ * On web:    invisible — the WebLayout header handles the title.
+ *            Only renders the back button when showBack=true.
+ * On mobile: purple bar with title, menu/back button.
+ */
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from 'react-native';
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+  StatusBar, Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Drawer from './Drawer';
@@ -12,19 +22,38 @@ type Props = {
   right?: React.ReactNode;
 };
 
-export default function PageHeader({ title, showBack = false, showMenu = true, right }: Props) {
+export default function PageHeader({
+  title, showBack = false, showMenu = true, right,
+}: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const router = useRouter();
 
   const handleBack = () => {
     if (Platform.OS === 'web') {
-      // Always go home — avoids going back to Chapa checkout page
       router.replace('/(tabs)/');
     } else {
       router.back();
     }
   };
 
+  // ── Web: render nothing (WebLayout owns the header) ────────────────────────
+  if (Platform.OS === 'web') {
+    // Still render a back button row for non-tab pages (post-job, my-jobs, etc.)
+    if (showBack) {
+      return (
+        <View style={styles.webBackBar}>
+          <TouchableOpacity onPress={handleBack} style={styles.webBackBtn}>
+            <Ionicons name="arrow-back" size={18} color={C.primary} />
+            <Text style={styles.webBackText}>Back</Text>
+          </TouchableOpacity>
+          {right ? <View>{right}</View> : null}
+        </View>
+      );
+    }
+    return null;
+  }
+
+  // ── Mobile: full purple bar ─────────────────────────────────────────────────
   return (
     <>
       <StatusBar backgroundColor={C.primary} barStyle="light-content" />
@@ -49,6 +78,7 @@ export default function PageHeader({ title, showBack = false, showMenu = true, r
 }
 
 const styles = StyleSheet.create({
+  // Mobile
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -59,5 +89,25 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   iconBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
-  title: { flex: 1, fontSize: 15, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  title:   { flex: 1, fontSize: 15, fontWeight: '700', color: '#fff', textAlign: 'center' },
+
+  // Web back bar (for non-tab pages)
+  webBackBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  webBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+  },
+  webBackText: { fontSize: 13, fontWeight: '600', color: C.primary },
 });

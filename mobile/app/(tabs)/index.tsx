@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, ScrollView,
+  ActivityIndicator, RefreshControl, ScrollView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { getJobs, getMyJobs } from '../../services/api';
 import PageHeader from '../../components/PageHeader';
+import WebLayout from '../../components/WebLayout';
 import { useAuth } from '../../context/AuthContext';
 import { C, S, LAYOUT } from '../../constants/theme';
 
@@ -53,10 +54,11 @@ function EmployerHome() {
   ];
 
   return (
+    <WebLayout title={t('employerDashboard')} subtitle={t('manageJobs')}>
     <View style={S.page}>
       <PageHeader title={t('employerDashboard')} />
       <ScrollView
-        contentContainerStyle={[S.content, { paddingTop: 16 }]}
+        contentContainerStyle={[S.content, { paddingTop: Platform.OS === 'web' ? 0 : 16 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Welcome */}
@@ -143,6 +145,7 @@ function EmployerHome() {
         )}
       </ScrollView>
     </View>
+    </WebLayout>
   );
 }
 
@@ -162,16 +165,19 @@ function SeekerHome() {
   useEffect(() => { fetchJobs(); }, []);
 
   if (loading) return (
-    <View style={S.page}>
-      <PageHeader title={t('latestJobs')} />
-      <ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} />
-    </View>
+    <WebLayout title={t('latestJobs')} subtitle="Browse available positions">
+      <View style={S.page}>
+        <PageHeader title={t('latestJobs')} />
+        <ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} />
+      </View>
+    </WebLayout>
   );
 
   return (
-    <View style={S.page}>
-      <PageHeader title={t('latestJobs')} />
-      <FlatList
+    <WebLayout title={t('latestJobs')} subtitle="Browse available positions">
+      <View style={S.page}>
+        <PageHeader title={t('latestJobs')} />
+        <FlatList
         data={jobs}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={S.content}
@@ -232,7 +238,8 @@ function SeekerHome() {
           </View>
         }
       />
-    </View>
+      </View>
+    </WebLayout>
   );
 }
 
