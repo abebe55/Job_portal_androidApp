@@ -1,8 +1,7 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { getItem } from '../utils/storage';
 import { Platform } from 'react-native';
 
-// Use environment variable for deployed backend, fallback to localhost for dev
 const DEPLOYED_API = process.env.EXPO_PUBLIC_API_URL;
 
 const BASE_URL = DEPLOYED_API
@@ -20,8 +19,8 @@ api.interceptors.request.use(async (config) => {
 });
 
 /**
- * Retry wrapper — on a 500 from a cold Render instance, wait 1.5s and try once more.
- * All other errors (400, 401, 403, 404) are passed through immediately.
+ * Retry wrapper — safe ONLY for idempotent/read operations (GET, profile, job list, etc.)
+ * DO NOT use for write operations that can create duplicate records.
  */
 async function withRetry<T = any>(
   fn: () => Promise<AxiosResponse<T>>,
@@ -35,7 +34,7 @@ async function withRetry<T = any>(
     } catch (err: any) {
       lastError = err;
       const status = err?.response?.status;
-      // Only retry on 500/502/503/504 (server errors) — never on 4xx
+      // Only retry on 5xx server errors — never on 4xx client errors
       if (!status || status < 500) throw err;
       if (attempt < retries - 1) {
         await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
@@ -45,37 +44,41 @@ async function withRetry<T = any>(
   throw lastError;
 }
 
-// Auth
+// ── Auth — NO retry on write operations (register, login, OTP send) ──────────
+// These are non-idempotent: retrying creates duplicate users / duplicate OTPs.
+// The backend now handles its own DB retry internally.
+
 export const register = (data: object) =>
-  withRetry(() => api.post('/auth/register/', data));
+  api.post('/auth/register/', data);
 
 export const registerMultipart = (data: FormData) =>
-  withRetry(() => api.post('/auth/register/', data, {
+  api.post('/auth/register/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  }));
+  });
 
 export const login = (data: object) =>
-  withRetry(() => api.post('/token/', data));
+  api.post('/token/', data);
 
+export const sendVerificationOTP = (email: string) =>
+  api.post('/auth/send-otp/', { email });
+
+export const verifyEmailOTP = (email: string, otp: string) =>
+  api.post('/auth/verify-otp/', { email, otp });
+
+export const requestPasswordReset = (email: string) =>
+  api.post('/auth/password-reset/request/', { email });
+
+export const confirmPasswordReset = (data: object) =>
+  api.post('/auth/password-reset/confirm/', data);
+
+// ── Profile — retry safe (GET / PATCH profile) ────────────────────────────────
 export const getProfile = () =>
   withRetry(() => api.get('/auth/profile/'));
 
-export const sendVerificationOTP = () =>
-  withRetry(() => api.post('/auth/send-otp/'));
-
-export const verifyEmailOTP = (otp: string) =>
-  withRetry(() => api.post('/auth/verify-otp/', { otp }));
-
-export const requestPasswordReset = (email: string) =>
-  withRetry(() => api.post('/auth/password-reset/request/', { email }));
-
-export const confirmPasswordReset = (data: object) =>
-  withRetry(() => api.post('/auth/password-reset/confirm/', data));
-
 export const updateProfile = (data: object) =>
-  withRetry(() => api.patch('/auth/profile/', data));
+  api.patch('/auth/profile/', data);  // no retry — PATCH is not idempotent here
 
-// Jobs
+// ── Jobs — GET safe to retry, POST/PATCH/DELETE are not ──────────────────────
 export const getJobs = (params?: object) =>
   withRetry(() => api.get('/jobs/', { params }));
 
@@ -83,35 +86,35 @@ export const getJobDetail = (id: number) =>
   withRetry(() => api.get(`/jobs/${id}/`));
 
 export const createJob = (data: object) =>
-  withRetry(() => api.post('/jobs/create/', data));
+  api.post('/jobs/create/', data);
 
 export const updateJob = (id: number, data: object) =>
-  withRetry(() => api.patch(`/jobs/${id}/edit/`, data));
+  api.patch(`/jobs/${id}/edit/`, data);
 
 export const deleteJob = (id: number) =>
-  withRetry(() => api.delete(`/jobs/${id}/delete/`));
+  api.delete(`/jobs/${id}/delete/`);
 
 export const getMyJobs = () =>
   withRetry(() => api.get('/jobs/my-jobs/'));
 
 export const payJobFee = (id: number, data: object) =>
-  withRetry(() => api.post(`/jobs/${id}/pay-fee/`, data));
+  api.post(`/jobs/${id}/pay-fee/`, data);
 
 export const confirmJobPayment = (id: number, data: object) =>
-  withRetry(() => api.post(`/jobs/${id}/confirm-payment/`, data));
+  api.post(`/jobs/${id}/confirm-payment/`, data);
 
 export const requestDeadlineExtend = (id: number, data: object) =>
-  withRetry(() => api.post(`/jobs/${id}/request-extend/`, data));
+  api.post(`/jobs/${id}/request-extend/`, data);
 
 export const payExtendFee = (id: number, data: object) =>
-  withRetry(() => api.post(`/jobs/${id}/pay-extend/`, data));
+  api.post(`/jobs/${id}/pay-extend/`, data);
 
 export const confirmExtendPayment = (id: number, data: object) =>
-  withRetry(() => api.post(`/jobs/${id}/confirm-extend/`, data));
+  api.post(`/jobs/${id}/confirm-extend/`, data);
 
-// Applications
+// ── Applications — apply is non-idempotent, reads are safe ───────────────────
 export const applyJob = (data: object) =>
-  withRetry(() => api.post('/applications/apply/', data));
+  api.post('/applications/apply/', data);
 
 export const getMyApplications = () =>
   withRetry(() => api.get('/applications/my/'));
@@ -120,48 +123,48 @@ export const getJobApplications = (jobId: number) =>
   withRetry(() => api.get(`/applications/job/${jobId}/`));
 
 export const updateApplicationStatus = (id: number, data: object) =>
-  withRetry(() => api.patch(`/applications/${id}/status/`, data));
+  api.patch(`/applications/${id}/status/`, data);
 
-// CV
+// ── CV ────────────────────────────────────────────────────────────────────────
 export const getCV = () =>
   withRetry(() => api.get('/cvs/'));
 
 export const updateCV = (data: FormData) =>
-  withRetry(() => api.patch('/cvs/', data, {
+  api.patch('/cvs/', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  }));
+  });
 
-// Wallet
+// ── Wallet ────────────────────────────────────────────────────────────────────
 export const getWallet = () =>
   withRetry(() => api.get('/wallet/'));
 
 export const initiateDeposit = (data: object) =>
-  withRetry(() => api.post('/wallet/deposit/', data));
+  api.post('/wallet/deposit/', data);
 
 export const verifyChapa = (txRef: string) =>
   withRetry(() => api.get(`/wallet/chapa/verify/?tx_ref=${txRef}`));
 
 export const deductCommission = () =>
-  withRetry(() => api.post('/wallet/deduct/'));
+  api.post('/wallet/deduct/');
 
-// Admin
+// ── Admin ─────────────────────────────────────────────────────────────────────
 export const adminGetJobs = (params?: object) =>
   withRetry(() => api.get('/jobs/admin/all/', { params }));
 
 export const adminApproveJob = (id: number, data: object) =>
-  withRetry(() => api.patch(`/jobs/admin/${id}/approve/`, data));
+  api.patch(`/jobs/admin/${id}/approve/`, data);
 
 export const adminGetUsers = (params?: object) =>
   withRetry(() => api.get('/auth/admin/users/', { params }));
 
 export const adminUpdateUser = (id: number, data: object) =>
-  withRetry(() => api.patch(`/auth/admin/users/${id}/`, data));
+  api.patch(`/auth/admin/users/${id}/`, data);
 
 export const adminGetCommission = () =>
   withRetry(() => api.get('/wallet/admin/commission/'));
 
 export const adminUpdateCommission = (data: object) =>
-  withRetry(() => api.patch('/wallet/admin/commission/', data));
+  api.patch('/wallet/admin/commission/', data);
 
 export const adminGetTransactions = () =>
   withRetry(() => api.get('/wallet/admin/transactions/'));

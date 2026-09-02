@@ -10,7 +10,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { C } from '../../constants/theme';
 import { register as apiRegister, registerMultipart } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-
 // ── Employer types with their required docs ───────────────────────────────────
 const EMPLOYER_TYPES = [
   {
@@ -205,7 +204,7 @@ function UploadBtn({ docKey, files, setFiles }: { docKey: string; files: any; se
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function RegisterScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  useAuth(); // keep provider in scope for future use
 
   // Step: 'role' | 'basic' | 'employer_type' | 'employer_docs'
   const [step, setStep]           = useState<'role' | 'basic' | 'employer_type' | 'employer_docs'>('role');
@@ -309,14 +308,17 @@ export default function RegisterScreen() {
 
       setSuccess(
         role === 'employer'
-          ? 'Account created! Please verify your email before your documents are reviewed.'
-          : 'Account created! Please check your email for the OTP verification code.'
+          ? 'Account created! A verification code has been sent to your email.'
+          : 'Account created! A verification code has been sent to your email.'
       );
-      // Auto-login for both roles so verify-email screen has a valid token
-      try {
-        await login(form.username.trim(), form.password);
-      } catch {}
-      setTimeout(() => router.replace('/(auth)/verify-email'), 800);
+      // Navigate directly to verify-email — no auto-login needed.
+      // Backend already sent the OTP during registration.
+      // User logs in AFTER verifying email.
+      const email = form.email.trim();
+      setTimeout(() => router.replace({
+        pathname: '/(auth)/verify-email',
+        params: { email },
+      } as any), 800);
     } catch (e: any) {
       const d = e?.response?.data;
       setError(
