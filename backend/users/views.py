@@ -88,13 +88,13 @@ class RegisterView(generics.CreateAPIView):
             logger.error('[RegisterView] serializer.save() failed: %s', exc, exc_info=True)
             raise
 
-        # Generate + store OTP via raw pymongo to avoid djongo ObjectId/int mismatch
-        otp     = generate_otp()
-        expires = timezone.now() + timedelta(minutes=15)
+        # Generate + store OTP via raw pymongo — store naive UTC datetimes
+        otp      = generate_otp()
+        now_utc  = timezone.now().replace(tzinfo=None)  # naive UTC
+        expires_utc = now_utc + timedelta(minutes=15)
         try:
             db      = _get_db()
             otp_col = db.connection['users_emailverificationotp']
-            # Get the real integer user id from the users collection
             usr_col  = db.connection['users_user']
             user_doc = usr_col.find_one({'username': user.username})
             user_int_id = user_doc['id'] if user_doc else str(user.id)
@@ -104,8 +104,8 @@ class RegisterView(generics.CreateAPIView):
                 'email':      user.email,
                 'otp_type':   'email_verification',
                 'verified':   False,
-                'created_at': timezone.now(),
-                'expires_at': expires,
+                'created_at': now_utc,
+                'expires_at': expires_utc,
             })
             logger.debug('[RegisterView] OTP stored for user_id=%s email=%s', user_int_id, user.email)
         except Exception as exc:
@@ -168,18 +168,18 @@ class SendVerificationOTPView(APIView):
         if user_doc.get('email_verified'):
             return Response({'message': 'Email is already verified.'})
 
-        # 60-second cooldown
-        now    = timezone.now()
-        cutoff = (now - timedelta(seconds=60)).replace(tzinfo=None)
+        # 60-second cooldown — compare naive UTC throughout
+        now_utc    = timezone.now().replace(tzinfo=None)  # naive UTC
+        cutoff_utc = now_utc - timedelta(seconds=60)
         recent = otp_col.find_one({
             '$or': [
                 {'user_id': user_doc['id'],       'otp_type': 'email_verification', 'verified': False},
                 {'user_id': str(user_doc['id']),  'otp_type': 'email_verification', 'verified': False},
             ],
-            'created_at': {'$gte': cutoff},
+            'created_at': {'$gte': cutoff_utc},
         })
         if recent:
-            return Response({'message': f'A code was already sent to {email}. Please wait 60 seconds.'})
+            return Response({'message': f'A code was already sent to {email}. Please check your inbox or wait 60 seconds before requesting a new one.'})
 
         # Invalidate old OTPs
         otp_col.update_many(
@@ -190,13 +190,13 @@ class SendVerificationOTPView(APIView):
             {'$set': {'verified': True}},
         )
 
-        otp     = generate_otp()
-        expires = now + timedelta(minutes=15)
-        # Always use raw pymongo — avoids djongo ObjectId/int FK mismatch
+        otp        = generate_otp()
+        expires_utc = now_utc + timedelta(minutes=15)
+        # Always use raw pymongo — store naive UTC datetimes
         otp_col.insert_one({
             'user_id': user_doc['id'], 'otp': otp, 'email': email,
             'otp_type': 'email_verification', 'verified': False,
-            'created_at': now, 'expires_at': expires,
+            'created_at': now_utc, 'expires_at': expires_utc,
         })
 
         sent = send_email_verification_otp(email, user_doc.get('username', ''), otp)
@@ -246,11 +246,14 @@ class VerifyEmailOTPView(APIView):
             return Response({'error': 'Invalid code.'}, status=400)
 
         from datetime import timezone as dt_tz
+        import datetime as _dt
         expires = otp_doc.get('expires_at')
         if expires:
-            if expires.tzinfo is None:
-                expires = expires.replace(tzinfo=dt_tz.utc)
-            if timezone.now() > expires:
+            # MongoDB stores naive datetimes — compare as naive UTC
+            if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
+                expires = expires.replace(tzinfo=None)  # strip tz if somehow present
+            now_naive = _dt.datetime.utcnow()  # always naive UTC
+            if now_naive > expires:
                 return Response(
                     {'error': 'Code has expired. Please request a new one.'}, status=400)
 
@@ -295,8 +298,9 @@ class PasswordResetRequestView(APIView):
         if not user_doc:
             return Response({'message': 'If that email is registered, an OTP has been sent.'})
 
-        otp     = generate_otp()
-        expires = timezone.now() + timedelta(minutes=15)
+        otp      = generate_otp()
+        now_utc  = timezone.now().replace(tzinfo=None)
+        expires_utc = now_utc + timedelta(minutes=15)
 
         otp_col.update_many(
             {'$or': [
@@ -306,11 +310,11 @@ class PasswordResetRequestView(APIView):
             {'$set': {'verified': True}},
         )
 
-        # Always use raw pymongo — avoids djongo ObjectId/int FK mismatch
+        # Always use raw pymongo — store naive UTC datetimes
         otp_col.insert_one({
             'user_id': user_doc['id'], 'otp': otp, 'email': email,
             'otp_type': 'password_reset', 'verified': False,
-            'created_at': timezone.now(), 'expires_at': expires,
+            'created_at': now_utc, 'expires_at': expires_utc,
         })
 
         # ✅ Use password-reset template
@@ -338,7 +342,7 @@ class PasswordResetConfirmView(APIView):
                 {'error': 'Password must be at least 8 characters.'}, status=400)
 
         from django.contrib.auth.hashers import make_password
-        from datetime import timezone as dt_tz
+        import datetime as _dt
 
         try:
             db      = _get_db()
@@ -365,9 +369,9 @@ class PasswordResetConfirmView(APIView):
 
         expires = otp_doc.get('expires_at')
         if expires:
-            if expires.tzinfo is None:
-                expires = expires.replace(tzinfo=dt_tz.utc)
-            if timezone.now() > expires:
+            if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
+                expires = expires.replace(tzinfo=None)
+            if _dt.datetime.utcnow() > expires:
                 return Response(
                     {'error': 'OTP has expired. Please request a new one.'}, status=400)
 

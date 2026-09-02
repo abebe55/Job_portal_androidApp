@@ -70,11 +70,16 @@ export default function VerifyEmailScreen() {
       setSuccess(`Verification code sent to ${resolvedEmail}`);
       setCountdown(60);
     } catch (e: any) {
-      const msg = e?.response?.data?.error || e?.response?.data?.message || '';
-      // If already sent recently, show the message but don't treat as error
-      if (msg.toLowerCase().includes('already sent') || msg.toLowerCase().includes('wait')) {
-        setSuccess(msg);
+      const data = e?.response?.data;
+      const msg  = data?.error || data?.message || '';
+      // Treat any non-error response (200/503 with message) as informational
+      if (e?.response?.status === 200 || msg.toLowerCase().includes('already sent') ||
+          msg.toLowerCase().includes('wait') || msg.toLowerCase().includes('check your inbox')) {
+        setSuccess(msg || `Code already sent to ${resolvedEmail}. Check your inbox.`);
         setCountdown(60);
+      } else if (e?.response?.status === 503) {
+        // Backend couldn't send — show error but don't block UI
+        setError('Email service temporarily unavailable. Please try again in a moment.');
       } else {
         setError(msg || 'Failed to send code. Please try again.');
       }
