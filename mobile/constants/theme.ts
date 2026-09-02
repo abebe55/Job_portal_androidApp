@@ -1,83 +1,94 @@
-// Primary color: purple
-const PRIMARY       = '#7c3aed';   // purple-600
-const PRIMARY_DARK  = '#5b21b6';   // purple-800
-const PRIMARY_LIGHT = '#ede9fe';   // purple-100
+import { Dimensions, Platform } from 'react-native';
+
+const { width } = Dimensions.get('window');
+
+// ── Colours ───────────────────────────────────────────────────────────────────
+const PRIMARY       = '#6c63ff';   // indigo-violet — matches sample project
+const PRIMARY_DARK  = '#5a52d5';
+const PRIMARY_LIGHT = '#f0eeff';
 
 export const C = {
   primary:      PRIMARY,
   primaryDark:  PRIMARY_DARK,
   primaryLight: PRIMARY_LIGHT,
-  bg:           '#f5f3ff',
-  card:         '#ffffff',
-  sidebar:      PRIMARY,
-  sidebarText:  '#ffffff',
-  text:         '#0f0f1a',
-  textSub:      '#4b5563',
-  border:       '#e5e7eb',
-  success:      '#22c55e',
-  warning:      '#f59e0b',
-  danger:       '#ef4444',
-  info:         '#3b82f6',
-  white:        '#ffffff',
+
+  bg:      '#f8f9fc',
+  surface: '#ffffff',
+  card:    '#ffffff',
+
+  text:    '#1a1a2e',
+  textSub: '#6b7280',
+  textMuted: '#9ca3af',
+
+  border:      '#e5e7eb',
+  borderLight: '#f3f4f6',
+
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger:  '#ef4444',
+  dangerLight: '#fee2e2',
+  info:    '#3b82f6',
+  white:   '#ffffff',
 };
 
+// ── Responsive layout ─────────────────────────────────────────────────────────
+// On web (PC) content is wide — use larger horizontal padding.
+// On mobile keep it tight.
+const isWeb   = Platform.OS === 'web';
+const isWide  = width > 768;   // tablet / PC
+
+export const LAYOUT = {
+  // Horizontal padding for list content and scroll containers
+  px:        isWide ? 40  : 16,
+  // Max content width on wide screens
+  maxWidth:  isWide ? 800 : undefined as number | undefined,
+  // Card inner padding
+  cardPad:   16,
+};
+
+// ── Shared style primitives ───────────────────────────────────────────────────
 export const S = {
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.82)',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.95)',
-  },
   page: {
     flex: 1,
-    backgroundColor: '#f8f8ff',
+    backgroundColor: C.bg,
   },
-  px: {
-    paddingHorizontal: 18,
+
+  // Standard content wrapper — use as contentContainerStyle on ScrollView/FlatList
+  content: {
+    paddingHorizontal: LAYOUT.px,
+    paddingTop: 14,
+    paddingBottom: 40,
+    ...(isWide && LAYOUT.maxWidth
+      ? { alignSelf: 'center' as const, width: '100%' as const, maxWidth: LAYOUT.maxWidth }
+      : {}),
   },
-  header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    backgroundColor: PRIMARY,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 12,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '800' as const,
-    color: '#ffffff',
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800' as const,
-    color: '#0f0f1a',
+
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    padding: LAYOUT.cardPad,
     marginBottom: 12,
-    marginTop: 4,
+    shadowColor: '#6c63ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(108,99,255,0.08)',
   },
+
   input: {
-    backgroundColor: '#ffffff',
+    backgroundColor: C.surface,
     borderRadius: 10,
     padding: 13,
     fontSize: 15,
     fontWeight: '500' as const,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    color: '#0f0f1a',
+    borderColor: C.border,
+    color: C.text,
     marginBottom: 12,
   },
-  listContent: {
-    paddingHorizontal: 11,
-    paddingBottom: 32,
-  },
+
   btn: {
     backgroundColor: PRIMARY,
     padding: 14,
@@ -88,17 +99,59 @@ export const S = {
   btnText: {
     color: '#ffffff',
     fontSize: 15,
-    fontWeight: '800' as const,
-    letterSpacing: 0.3,
+    fontWeight: '700' as const,
   },
+
+  header: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 12,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '800' as const,
+    color: '#ffffff',
+    flex: 1,
+  },
+
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '800' as const,
+    color: C.textSub,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.6,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+
   tag: {
     backgroundColor: PRIMARY_LIGHT,
-    color: PRIMARY,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
     fontSize: 12,
     fontWeight: '600' as const,
+    color: PRIMARY,
     overflow: 'hidden' as const,
   },
+
+  badge: (bg: string, color: string) => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    backgroundColor: bg,
+    alignSelf: 'flex-start' as const,
+  }),
+  badgeText: (color: string) => ({
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color,
+  }),
 };

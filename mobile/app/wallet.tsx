@@ -169,22 +169,22 @@ export default function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 60, paddingTop: 14, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 },
   balanceCard: {
-    backgroundColor: C.white, borderRadius: 16,
+    backgroundColor: C.primary,
+    borderRadius: 16,
     padding: 20, marginBottom: 14,
     shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12, shadowRadius: 12, elevation: 5,
-    borderWidth: 1, borderColor: 'rgba(124,58,237,0.1)',
+    shadowOpacity: 0.25, shadowRadius: 12, elevation: 5,
     flexDirection: 'row', alignItems: 'center', gap: 14,
   },
-  balanceLabel: { color: C.textSub, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  balanceAmount: { color: C.primary, fontSize: 26, fontWeight: '800', marginTop: 2 },
+  balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  balanceAmount: { color: '#fff', fontSize: 28, fontWeight: '800', marginTop: 2 },
   section: {
-    backgroundColor: C.white, borderRadius: 14, padding: 16, marginBottom: 14,
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: 'rgba(124,58,237,0.07)',
+    backgroundColor: C.surface, borderRadius: 14, padding: 16, marginBottom: 14,
+    shadowColor: '#6c63ff', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+    borderWidth: 1, borderColor: C.border,
   },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 6 },
   hint: { fontSize: 12, color: C.textSub, marginBottom: 12 },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 12,
-    borderWidth: 1, borderColor: C.border,
+    borderWidth: 1.5, borderColor: C.border,
   },
   amountField: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.text },
   payBtn: {
@@ -204,17 +204,18 @@ const styles = StyleSheet.create({
   quickChip: {
     flex: 1, backgroundColor: C.primaryLight, borderRadius: 8,
     paddingVertical: 8, alignItems: 'center',
+    borderWidth: 1, borderColor: C.border,
   },
   quickChipText: { color: C.primary, fontWeight: '700', fontSize: 13 },
   txRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border,
+    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.borderLight,
   },
   txIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   txType: { fontSize: 13, fontWeight: '700', color: C.text },
   txDesc: { fontSize: 11, color: C.textSub, marginTop: 1 },
   txAmount: { fontSize: 14, fontWeight: '700' },
   txDate: { fontSize: 10, color: C.textSub, marginTop: 2 },
-  empty: { alignItems: 'center', paddingVertical: 20, gap: 8 },
+  empty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   emptyText: { color: C.textSub, fontSize: 13 },
 });

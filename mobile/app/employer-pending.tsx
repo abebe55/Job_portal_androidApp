@@ -109,7 +109,7 @@ export default function EmployerPendingScreen() {
 
 const s = StyleSheet.create({
   page:       { flex: 1, backgroundColor: C.bg },
-  topBar:     { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#7c3aed', padding: 16, paddingTop: 48 },
+  topBar:     { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.primary, padding: 16, paddingTop: 48 },
   backBtn:    { padding: 4, marginRight: 4 },
   logoBox:    { width: 36, height: 36, borderRadius: 10, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
   topBarTitle:{ fontSize: 18, fontWeight: '800', color: '#fff' },
@@ -119,7 +119,7 @@ const s = StyleSheet.create({
   title:      { fontSize: 22, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 12 },
   sub:        { fontSize: 14, color: C.textSub, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
 
-  stepsCard:  { width: '100%', backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 16, shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3, borderWidth: 1, borderColor: 'rgba(124,58,237,0.08)' },
+  stepsCard:  { width: '100%', backgroundColor: C.surface, borderRadius: 16, padding: 18, marginBottom: 16, shadowColor: '#6c63ff', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 3, borderWidth: 1, borderColor: C.border },
   stepsTitle: { fontSize: 13, fontWeight: '800', color: C.text, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 },
   stepRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   stepNum:    { width: 24, height: 24, borderRadius: 12, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
@@ -129,8 +129,8 @@ const s = StyleSheet.create({
   infoBox:    { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#dbeafe', borderRadius: 12, padding: 14, marginBottom: 24, borderWidth: 1, borderColor: '#93c5fd', width: '100%' },
   infoText:   { flex: 1, fontSize: 12, color: '#1e40af', lineHeight: 18 },
 
-  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#ede9fe', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(124,58,237,0.2)' },
+  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primaryLight, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13, marginBottom: 12, borderWidth: 1, borderColor: C.border },
   refreshText:{ color: C.primary, fontWeight: '700', fontSize: 15 },
-  logoutBtn:  { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fee2e2', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13 },
+  logoutBtn:  { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.dangerLight, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13 },
   logoutText: { color: C.danger, fontWeight: '700', fontSize: 15 },
 });

@@ -546,7 +546,7 @@ export default function MyJobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  list:         { paddingHorizontal: Platform.OS === 'web' ? 60 : 12, paddingTop: 14, paddingBottom: 32 },
+  list:         { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 32 },
   verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.primaryLight, padding: 14, borderBottomWidth: 1, borderBottomColor: C.border },
   verifyText:   { color: C.primary, fontSize: 13, fontWeight: '600' },
   card:         { ...S.card },
