@@ -159,7 +159,12 @@ img { max-width: 100%; display: block; }
   color: var(--text-sub);
   padding: 6px;
   border-radius: 8px;
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: none;
+  border: none;
 }
 .jp-close:hover { background: var(--primary-soft); color: var(--primary); }
 
@@ -242,7 +247,10 @@ img { max-width: 100%; display: block; }
   color: var(--text);
   padding: 8px;
   border-radius: 10px;
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   border: 1px solid var(--border);
   background: var(--surface);
 }

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getJobDetail, applyJob, getMyApplications } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
+import WebLayout from '../../components/WebLayout';
 import { C, S } from '../../constants/theme';
 
 export default function JobDetailScreen() {
@@ -60,6 +61,7 @@ export default function JobDetailScreen() {
   const JOB_TYPE_COLOR: any = { fulltime: '#22c55e', parttime: '#f59e0b', contract: '#3b82f6', internship: '#a855f7' };
 
   return (
+    <WebLayout title={job.title} subtitle={job.posted_by?.username}>
     <View style={S.page}>
       <PageHeader title="Job Detail" showBack />
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -137,7 +139,7 @@ export default function JobDetailScreen() {
                 {applying
                   ? <ActivityIndicator color="#fff" size="small" />
                   : <>
-                      <Ionicons name="send-outline" size={18} color="#fff" />
+                      <Ionicons name="send-outline" size={16} color="#1d4ed8" />
                       <Text style={styles.applyBtnText}>Apply Now</Text>
                     </>
                 }
@@ -147,6 +149,7 @@ export default function JobDetailScreen() {
         )}
       </ScrollView>
     </View>
+    </WebLayout>
   );
 }
 
@@ -197,10 +200,11 @@ const styles = StyleSheet.create({
   descTitle: { fontSize: 13, fontWeight: '700', color: C.primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
   descText: { fontSize: 14, color: C.text, lineHeight: 22 },
   applyBtn: {
-    backgroundColor: C.primary, borderRadius: 12, padding: 16,
+    backgroundColor: '#ffffff', borderRadius: 10, padding: 14,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    borderWidth: 1.5, borderColor: '#93c5fd',
   },
-  applyBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  applyBtnText: { color: '#1d4ed8', fontSize: 15, fontWeight: '700' },
   appliedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#dcfce7', borderRadius: 12, padding: 16,

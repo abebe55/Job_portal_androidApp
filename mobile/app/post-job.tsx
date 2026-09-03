@@ -532,7 +532,7 @@ export default function PostJobScreen() {
           {saving
             ? <ActivityIndicator color="#fff" size="small" />
             : <>
-                <Ionicons name="send-outline" size={18} color="#fff" />
+                <Ionicons name="send-outline" size={16} color="#1d4ed8" />
                 <Text style={s.submitBtnTxt}>Submit for Review</Text>
               </>
           }
@@ -602,9 +602,9 @@ const s = StyleSheet.create({
   salaryRangeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   rangeSep:     { fontSize: 18, color: C.textSub, fontWeight: '700', paddingBottom: 12 },
 
-  // Submit
-  submitBtn:    { backgroundColor: C.primary, borderRadius: 13, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 },
-  submitBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  // Submit — white bg + blue text + border
+  submitBtn:    { backgroundColor: '#ffffff', borderRadius: 10, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, borderWidth: 1.5, borderColor: '#93c5fd' },
+  submitBtnTxt: { color: '#1d4ed8', fontSize: 15, fontWeight: '700' },
   footerNote:   { fontSize: 12, color: C.textSub, textAlign: 'center', lineHeight: 18, paddingHorizontal: 8 },
 
   // Experience cards

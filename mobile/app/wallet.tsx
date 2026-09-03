@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getWallet, initiateDeposit } from '../services/api';
 import PageHeader from '../components/PageHeader';
+import WebLayout from '../components/WebLayout';
 import ChapaWebView from '../components/ChapaWebView';
 import { C, S } from '../constants/theme';
 
@@ -65,6 +66,7 @@ export default function WalletScreen() {
   );
 
   return (
+    <WebLayout title="My Wallet" subtitle="Manage your balance">
     <View style={S.page}>
       <PageHeader title="My Wallet" showBack />
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -99,7 +101,7 @@ export default function WalletScreen() {
             <TouchableOpacity style={styles.payBtn} onPress={handleTopUp} disabled={paying}>
               {paying
                 ? <ActivityIndicator color="#fff" size="small" />
-                : <><Ionicons name="card-outline" size={16} color="#fff" /><Text style={styles.payBtnText}>Pay</Text></>
+                : <><Ionicons name="card-outline" size={16} color="#1d4ed8" /><Text style={styles.payBtnText}>Pay</Text></>
               }
             </TouchableOpacity>
           </View>
@@ -165,6 +167,7 @@ export default function WalletScreen() {
         )}
       </Modal>
     </View>
+    </WebLayout>
   );
 }
 
@@ -196,10 +199,11 @@ const styles = StyleSheet.create({
   },
   amountField: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.text },
   payBtn: {
-    backgroundColor: C.primary, borderRadius: 10, paddingHorizontal: 18,
-    paddingVertical: 13, flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#ffffff', borderRadius: 10, paddingHorizontal: 18,
+    paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderWidth: 1.5, borderColor: '#93c5fd',
   },
-  payBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  payBtnText: { color: '#1d4ed8', fontWeight: '700', fontSize: 14 },
   quickRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   quickChip: {
     flex: 1, backgroundColor: C.primaryLight, borderRadius: 8,
