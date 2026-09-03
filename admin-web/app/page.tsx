@@ -17,6 +17,7 @@ function FieldInput({
     <div style={s.inputWrap}>
       <span style={s.inputIcon}>{icon}</span>
       <input
+        className="jp-input"
         style={s.input}
         type={type}
         placeholder={placeholder}
@@ -32,7 +33,7 @@ function PrimaryBtn({ children, disabled, type = 'submit' }: {
   children: React.ReactNode; disabled?: boolean; type?: 'submit' | 'button';
 }) {
   return (
-    <button style={{ ...s.btn, opacity: disabled ? 0.7 : 1 }} type={type} disabled={disabled}>
+    <button className="jp-btn jp-btn-primary" style={{ ...s.btn, opacity: disabled ? 0.7 : 1 }} type={type} disabled={disabled}>
       {children}
     </button>
   );
@@ -194,8 +195,8 @@ export default function LoginPage() {
   );
 
   return (
-    <div style={s.page}>
-      <div style={s.card}>
+      <div className="jp-login-page">
+      <div className="jp-login-card">
 
         {/* Logo */}
         <div style={s.logoWrap}>
@@ -259,30 +260,13 @@ export default function LoginPage() {
 
 /* ─── Styles ──────────────────────────────────────────────── */
 const s: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'var(--bg)',
-    padding: '24px 16px',
-  },
-
-  card: {
-    background: 'var(--surface)',
-    borderRadius: 'var(--radius-xl)',
-    padding: '44px 40px 36px',
-    width: '100%', maxWidth: 400,
-    boxShadow: 'var(--shadow-lg)',
-    border: '1px solid var(--border)',
-    textAlign: 'center',
-  },
-
   logoWrap: { display: 'flex', justifyContent: 'center', marginBottom: 16 },
   logoIcon: {
     width: 56, height: 56,
     borderRadius: 'var(--radius-xl)',
-    background: 'var(--primary-light)',
+    background: 'linear-gradient(145deg, #eeebff, #e0dbff)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(108,99,255,0.2)',
+    boxShadow: '0 8px 20px rgba(109,94,252,0.22)',
   },
 
   title: {
@@ -314,26 +298,13 @@ const s: Record<string, React.CSSProperties> = {
     width: '100%',
     paddingTop: 12, paddingBottom: 12,
     paddingLeft: 42, paddingRight: 14,
-    borderRadius: 'var(--radius-md)',
-    border: '1.5px solid var(--border)',
-    fontSize: 14, fontWeight: 500,
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-    transition: 'border-color var(--transition-fast)',
   },
 
   btn: {
     width: '100%',
     padding: '13px',
-    borderRadius: 'var(--radius-md)',
-    border: 'none',
-    background: 'var(--primary)',
-    color: '#fff',
-    fontSize: 15, fontWeight: 700,
-    cursor: 'pointer',
-    transition: 'background var(--transition-fast)',
     marginTop: 4,
+    fontSize: 15,
   },
 
   ghostBtn: {

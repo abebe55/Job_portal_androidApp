@@ -167,13 +167,11 @@ export default function ApplicationsScreen() {
 
 const st = StyleSheet.create({
   card: {
-    backgroundColor: C.surface, borderRadius: 14, padding: 16,
-    marginBottom: 12, borderWidth: 1, borderColor: C.border,
-    shadowColor: '#6c63ff', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
+    backgroundColor: C.surface, borderRadius: 10, padding: 12,
+    marginBottom: 8, borderWidth: 1, borderColor: C.border,
   },
-  cardTop:   { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
-  iconWrap:  { width: 42, height: 42, borderRadius: 11, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  cardTop:   { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+  iconWrap:  { width: 36, height: 36, borderRadius: 9, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   jobTitle:  { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 3 },
   locRow:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
   location:  { color: C.textSub, fontSize: 12, flex: 1 },

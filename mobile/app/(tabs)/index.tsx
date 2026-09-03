@@ -316,8 +316,12 @@ const st = StyleSheet.create({
   actionLabel:    { fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
   emptyCard:  { backgroundColor: C.surface, borderRadius: 14, padding: 28, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: C.border },
-  postBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primary, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, marginTop: 4 },
-  postBtnText:{ color: '#fff', fontWeight: '700', fontSize: 13 },
+  postBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#93c5fd',
+    borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9, marginTop: 4,
+  },
+  postBtnText: { color: '#1d4ed8', fontWeight: '700', fontSize: 13 },
 
   jobRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

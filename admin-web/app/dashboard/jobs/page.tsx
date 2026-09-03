@@ -66,19 +66,20 @@ function ActionBtn({
   children, onClick, disabled, color = 'primary',
 }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; color?: 'primary' | 'success' | 'danger' | 'warning' | 'purple' | 'gray' }) {
   const map = {
-    primary: { bg: 'var(--primary-light)', color: 'var(--primary)' },
-    success: { bg: '#dcfce7', color: '#16a34a' },
-    danger:  { bg: '#fee2e2', color: '#ef4444' },
-    warning: { bg: '#fef3c7', color: '#d97706' },
-    purple:  { bg: '#ede9fe', color: '#7c3aed' },
-    gray:    { bg: '#f3f4f6', color: '#374151' },
+    primary: { bg: '#ffffff', color: '#1d4ed8',  border: '#93c5fd' },
+    success: { bg: '#ffffff', color: '#15803d',  border: '#86efac' },
+    danger:  { bg: '#ffffff', color: '#b91c1c',  border: '#fca5a5' },
+    warning: { bg: '#ffffff', color: '#b45309',  border: '#fcd34d' },
+    purple:  { bg: '#ffffff', color: '#6d28d9',  border: '#c4b5fd' },
+    gray:    { bg: '#ffffff', color: '#374151',  border: '#e5e7eb' },
   };
   const c = map[color];
   return (
     <button
       disabled={disabled}
       onClick={onClick}
-      style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', border: 'none', background: c.bg, color: c.color, fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap' as const }}
+      className="jp-btn"
+      style={{ background: c.bg, color: c.color, border: `1.5px solid ${c.border}` }}
     >
       {children}
     </button>
@@ -95,7 +96,8 @@ function LabeledInput({ label, value, onChange, type = 'text', placeholder }: {
         type={type} value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ flex: 1, padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--border)', fontSize: 14, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+        style={{ flex: 1 }}
+        className="jp-input"
       />
     </div>
   );
@@ -209,20 +211,15 @@ export default function JobsPage() {
   return (
     <AdminLayout>
 
-      {/* ── Page header ── */}
       <div style={p.pageHeader}>
-        <div>
-          <h1 style={p.pageTitle}>Job Management</h1>
-          <p style={p.pageSub}>Review, approve, delete and manage deadline extensions</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button style={p.outlineBtn} onClick={handleAutoClose}>
+        <div style={{ display: 'flex', gap: 10, marginLeft: 'auto' }}>
+          <button className="jp-btn jp-btn-ghost" onClick={handleAutoClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/></svg>
             Auto-Close Expired
           </button>
           {selected.size > 0 && (
             <button
-              style={{ ...p.outlineBtn, background: '#fee2e2', color: '#ef4444', borderColor: '#fca5a5', opacity: deleting ? 0.6 : 1 }}
+              className="jp-btn jp-btn-danger"
               onClick={handleBulkDelete} disabled={deleting}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
@@ -239,7 +236,7 @@ export default function JobsPage() {
       {/* ── Filter tabs ── */}
       <div style={p.filterRow}>
         {FILTERS.map(f => (
-          <button key={f} style={{ ...p.filterBtn, ...(filter === f ? p.filterActive : {}) }} onClick={() => setFilter(f)}>
+          <button key={f} className={`jp-chip${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
             {filterLabel(f)}
           </button>
         ))}
@@ -267,12 +264,12 @@ export default function JobsPage() {
 
       {/* ── Job list ── */}
       {loading ? (
-        <div style={p.loadingBox}>
-          <div style={p.spinner} />
+        <div className="jp-loading">
+          <div className="jp-spinner" />
           <p style={{ marginTop: 12, color: 'var(--text-sub)', fontWeight: 500 }}>Loading jobs…</p>
         </div>
       ) : displayJobs.length === 0 ? (
-        <div style={p.emptyBox}>
+        <div className="jp-empty">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
           <p style={{ marginTop: 12, fontWeight: 600, color: 'var(--text-sub)' }}>
             {filter === 'expired' ? 'No expired jobs.' : `No ${filterLabel(filter).toLowerCase()} jobs found.`}
@@ -289,7 +286,7 @@ export default function JobsPage() {
             const isOpen  = expanded === job.id;
 
             return (
-              <div key={job.id} style={{ ...p.card, ...(expired ? p.cardExpired : {}) }}>
+              <div key={job.id} className="jp-card-static" style={{ ...(expired ? p.cardExpired : {}) }}>
 
                 {/* ── Card header ── */}
                 <div style={p.cardTop}>
@@ -329,13 +326,13 @@ export default function JobsPage() {
                       <Badge bg="#dcfce7" color="#16a34a">ETB {job.posting_fee}</Badge>
                     )}
                     <button
-                      style={p.iconBtn}
+                      className="jp-icon-btn"
                       onClick={e => { e.stopPropagation(); handleDelete(job.id); }}
                       disabled={acting === job.id} title="Delete job"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                     </button>
-                    <button style={p.iconBtn} onClick={() => setExpanded(isOpen ? null : job.id)}>
+                    <button className="jp-icon-btn" onClick={() => setExpanded(isOpen ? null : job.id)}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
                         {isOpen ? <polyline points="18 15 12 9 6 15"/> : <polyline points="6 9 12 15 18 9"/>}
                       </svg>
@@ -454,31 +451,11 @@ export default function JobsPage() {
 /* ─── Styles ─────────────────────────────────────────────── */
 const p: Record<string, React.CSSProperties> = {
   pageHeader: {
-    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-    marginBottom: 24, flexWrap: 'wrap', gap: 12,
-  },
-  pageTitle: { fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 4 },
-  pageSub:   { fontSize: 14, color: 'var(--text-sub)' },
-
-  outlineBtn: {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '9px 16px',
-    borderRadius: 'var(--radius-md)',
-    border: '1.5px solid var(--border)',
-    background: 'var(--surface)',
-    color: 'var(--text-sub)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
+    marginBottom: 20, flexWrap: 'wrap', gap: 12,
   },
 
   filterRow:   { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 },
-  filterBtn:   {
-    padding: '7px 14px', borderRadius: 'var(--radius-full)',
-    border: '1.5px solid var(--border)', background: 'var(--surface)',
-    fontSize: 12, fontWeight: 600, color: 'var(--text-sub)', cursor: 'pointer',
-  },
-  filterActive: {
-    background: 'var(--primary)', color: '#fff',
-    border: '1.5px solid var(--primary)',
-  },
 
   bulkBar: {
     display: 'flex', alignItems: 'center', gap: 16,
@@ -488,19 +465,7 @@ const p: Record<string, React.CSSProperties> = {
     border: '1px solid #d4cfff',
   },
 
-  loadingBox: { padding: 64, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  spinner:    { width: 36, height: 36, border: '3px solid var(--border)', borderTop: '3px solid var(--primary)', borderRadius: '50%' },
-  emptyBox:   { padding: 64, textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-
   list: { display: 'flex', flexDirection: 'column', gap: 10 },
-
-  card: {
-    background: 'var(--surface)',
-    borderRadius: 'var(--radius-lg)',
-    border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-sm)',
-    overflow: 'hidden',
-  },
   cardExpired: {
     border: '1.5px solid #fca5a5',
     background: '#fff8f8',
@@ -517,15 +482,6 @@ const p: Record<string, React.CSSProperties> = {
   meta: {
     display: 'flex', gap: 6, flexWrap: 'wrap',
     fontSize: 12, color: 'var(--text-muted)',
-  },
-
-  iconBtn: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: 30, height: 30,
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--border)',
-    background: 'var(--surface)',
-    cursor: 'pointer',
   },
 
   detail: {

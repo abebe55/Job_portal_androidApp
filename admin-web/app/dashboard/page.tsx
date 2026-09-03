@@ -14,9 +14,9 @@ function StatCard({
   trend?: { label: string; up: boolean };
 }) {
   return (
-    <div style={sc.card}>
+    <div className="jp-stat-card">
       <div style={sc.cardTop}>
-        <div style={{ ...sc.iconWrap, background: iconBg }}>{icon}</div>
+        <div className="jp-icon-tile" style={{ background: iconBg }}>{icon}</div>
         {trend && (
           <span style={{ ...sc.trend, color: trend.up ? '#10b981' : '#ef4444' }}>
             {trend.up ? '↑' : '↓'} {trend.label}
@@ -30,51 +30,21 @@ function StatCard({
 }
 
 const sc: Record<string, React.CSSProperties> = {
-  card: {
-    background: 'var(--surface)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '20px 22px',
-    boxShadow: 'var(--shadow-card)',
-    border: '1px solid var(--border)',
-    display: 'flex', flexDirection: 'column', gap: 8,
-  },
   cardTop: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' },
-  iconWrap: {
-    width: 44, height: 44,
-    borderRadius: 'var(--radius-md)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
   trend: { fontSize: 12, fontWeight: 600, marginTop: 4 },
-  value: { fontSize: 28, fontWeight: 800, color: 'var(--text)', lineHeight: 1 },
+  value: { fontSize: 28, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: '-0.03em' },
   label: { fontSize: 13, color: 'var(--text-sub)', fontWeight: 500 },
 };
 
 /* ─── Section card wrapper ────────────────────────────────── */
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={sec.wrap}>
-      <div style={sec.header}>{title}</div>
+    <div className="jp-card-static">
+      <div className="jp-card-head">{title}</div>
       {children}
     </div>
   );
 }
-
-const sec: Record<string, React.CSSProperties> = {
-  wrap: {
-    background: 'var(--surface)',
-    borderRadius: 'var(--radius-lg)',
-    border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-card)',
-    overflow: 'hidden',
-  },
-  header: {
-    padding: '16px 22px',
-    borderBottom: '1px solid var(--border)',
-    fontSize: 14, fontWeight: 700,
-    color: 'var(--text)',
-  },
-};
 
 /* ─── Loading skeleton ────────────────────────────────────── */
 function Skeleton({ h = 28, w = '100%' }: { h?: number; w?: string | number }) {
@@ -205,19 +175,11 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout>
-      {/* ── Page heading ── */}
-      <div style={p.heading}>
-        <div>
-          <h1 style={p.title}>Dashboard</h1>
-          <p style={p.sub}>Welcome back — here's what's happening on the platform.</p>
-        </div>
-      </div>
-
       {/* ── Stat cards grid ── */}
       <div style={p.statsGrid}>
         {loading
           ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} style={{ ...sc.card, gap: 14 }}>
+              <div key={i} className="jp-stat-card">
                 <Skeleton h={44} w={44} />
                 <Skeleton h={28} w="60%" />
                 <Skeleton h={14} w="80%" />
@@ -230,7 +192,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Two-column section ── */}
-      <div style={p.twoCol}>
+      <div className="jp-two-col" style={p.twoCol}>
 
         {/* Recent jobs */}
         <SectionCard title="Recent Jobs">
@@ -245,7 +207,7 @@ export default function DashboardPage() {
               {recentJobs.map((job, i) => {
                 const st = statusCfg[job.status] ?? statusCfg.draft;
                 return (
-                  <div key={job.id} style={{ ...p.listRow, borderBottom: i < recentJobs.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div key={job.id} className="jp-list-row">
                     <div style={p.listMain}>
                       <span style={p.listTitle}>{job.title}</span>
                       <span style={p.listMeta}>{job.posted_by?.username ?? '—'} · {job.location ?? '—'}</span>
@@ -271,7 +233,7 @@ export default function DashboardPage() {
               {recentUsers.map((user, i) => {
                 const rc = roleCfg[user.role] ?? roleCfg.jobseeker;
                 return (
-                  <div key={user.id} style={{ ...p.listRow, borderBottom: i < recentUsers.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div key={user.id} className="jp-list-row">
                     <div style={p.avatarRow}>
                       <div style={p.avatar}>{user.username?.[0]?.toUpperCase() ?? '?'}</div>
                       <div style={p.listMain}>
@@ -294,27 +256,19 @@ export default function DashboardPage() {
 
 /* ─── Page-level styles ───────────────────────────────────── */
 const p: Record<string, React.CSSProperties> = {
-  heading: { marginBottom: 24 },
-  title:   { fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 4 },
-  sub:     { fontSize: 14, color: 'var(--text-sub)' },
-
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: 16,
-    marginBottom: 24,
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 12,
+    marginBottom: 18,
   },
 
   twoCol: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: 16,
+    gap: 14,
   },
 
-  listRow: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '13px 22px', gap: 12,
-  },
   avatarRow: { display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 },
   avatar: {
     width: 34, height: 34, borderRadius: '50%',

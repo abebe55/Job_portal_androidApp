@@ -93,7 +93,7 @@ function DocLink({ label, url }: { label: string; url: string }) {
 /* ─── Summary stat card ───────────────────────────────────── */
 function SumCard({ count, label, color, bg }: { count: number; label: string; color: string; bg: string }) {
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div className="jp-stat-card" style={{ gap: 6 }}>
       <div style={{ fontSize: 28, fontWeight: 800, color }}>{count}</div>
       <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>{label}</div>
       <div style={{ height: 3, borderRadius: 2, background: bg, marginTop: 4 }} />
@@ -156,16 +156,8 @@ export default function EmployerApprovalsPage() {
   return (
     <AdminLayout>
 
-      {/* ── Page header ── */}
-      <div style={p.pageHeader}>
-        <div>
-          <h1 style={p.pageTitle}>Employer Approvals</h1>
-          <p style={p.pageSub}>Review employer registration credentials and approve or reject accounts</p>
-        </div>
-      </div>
-
       {/* ── Summary cards ── */}
-      <div style={p.sumGrid}>
+      <div className="jp-sum-3" style={p.sumGrid}>
         <SumCard count={counts.pending}  label="Pending Review" color="#b45309" bg="#fde68a" />
         <SumCard count={counts.approved} label="Approved"       color="#15803d" bg="#86efac" />
         <SumCard count={counts.rejected} label="Rejected"       color="#b91c1c" bg="#fca5a5" />
@@ -179,7 +171,7 @@ export default function EmployerApprovalsPage() {
       <div style={p.filterRow}>
         {(['pending', 'approved', 'rejected', 'all'] as const).map(f => (
           <button key={f}
-            style={{ ...p.filterBtn, ...(filter === f ? p.filterActive : {}) }}
+            className={`jp-chip${filter === f ? ' active' : ''}`}
             onClick={() => setFilter(f)}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -194,12 +186,12 @@ export default function EmployerApprovalsPage() {
 
       {/* ── List ── */}
       {loading ? (
-        <div style={p.loadingBox}>
-          <div style={p.spinner} />
+        <div className="jp-loading">
+          <div className="jp-spinner" />
           <p style={{ marginTop: 12, color: 'var(--text-sub)', fontWeight: 500 }}>Loading employers…</p>
         </div>
       ) : verifs.length === 0 ? (
-        <div style={p.emptyBox}>
+        <div className="jp-empty">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
@@ -214,7 +206,7 @@ export default function EmployerApprovalsPage() {
             const st     = STATUS_CFG[v.status] ?? STATUS_CFG.pending;
             const isOpen = expanded === v.id;
             return (
-              <div key={v.id} style={p.card}>
+              <div key={v.id} className="jp-card-static">
 
                 {/* ── Card header row ── */}
                 <div style={p.cardTop} onClick={() => setExpanded(isOpen ? null : v.id)}>
@@ -239,7 +231,7 @@ export default function EmployerApprovalsPage() {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                     <Badge bg={st.bg} color={st.color}>{st.label}</Badge>
-                    <button style={p.chevronBtn}>
+                    <button className="jp-icon-btn">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
                         {isOpen ? <polyline points="18 15 12 9 6 15"/> : <polyline points="6 9 12 15 18 9"/>}
                       </svg>
@@ -299,7 +291,7 @@ export default function EmployerApprovalsPage() {
                             Note to employer (optional)
                           </label>
                           <input
-                            style={p.noteInput}
+                            className="jp-input"
                             placeholder="Reason for approval or rejection…"
                             value={notes[v.id] || ''}
                             onChange={e => setNotes(n => ({ ...n, [v.id]: e.target.value }))}
@@ -307,7 +299,7 @@ export default function EmployerApprovalsPage() {
                         </div>
                         <div style={{ display: 'flex', gap: 10 }}>
                           <button
-                            style={{ ...p.approveBtn, opacity: acting === `${v.id}-approve` ? 0.7 : 1 }}
+                            className="jp-btn jp-btn-success"
                             disabled={!!acting}
                             onClick={() => handleAction(v.id, 'approve')}
                           >
@@ -315,7 +307,7 @@ export default function EmployerApprovalsPage() {
                             {acting === `${v.id}-approve` ? 'Approving…' : 'Approve Employer'}
                           </button>
                           <button
-                            style={{ ...p.rejectBtn, opacity: acting === `${v.id}-reject` ? 0.7 : 1 }}
+                            className="jp-btn jp-btn-danger"
                             disabled={!!acting}
                             onClick={() => handleAction(v.id, 'reject')}
                           >
@@ -344,7 +336,7 @@ const p: Record<string, React.CSSProperties> = {
 
   sumGrid: {
     display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 16, marginBottom: 24,
+    gap: 12, marginBottom: 18,
   },
 
   filterRow:   { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 },
@@ -354,7 +346,7 @@ const p: Record<string, React.CSSProperties> = {
     border: '1.5px solid var(--border)', background: 'var(--surface)',
     fontSize: 12, fontWeight: 600, color: 'var(--text-sub)', cursor: 'pointer',
   },
-  filterActive: { background: 'var(--primary)', color: '#fff', border: '1.5px solid var(--primary)' },
+  filterActive: { background: '#eff6ff', color: '#1d4ed8', border: '1.5px solid #3b82f6' },
 
   loadingBox: { padding: 64, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' },
   spinner:    { width: 36, height: 36, border: '3px solid var(--border)', borderTop: '3px solid var(--primary)', borderRadius: '50%' },
@@ -414,12 +406,14 @@ const p: Record<string, React.CSSProperties> = {
 
   approveBtn: {
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none',
-    background: '#dcfce7', color: '#15803d', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+    padding: '9px 18px', borderRadius: 'var(--radius-md)',
+    border: '1.5px solid #86efac', background: '#f0fdf4',
+    color: '#15803d', fontWeight: 700, fontSize: 13, cursor: 'pointer',
   },
   rejectBtn: {
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '10px 20px', borderRadius: 'var(--radius-md)', border: 'none',
-    background: '#fee2e2', color: '#b91c1c', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+    padding: '9px 18px', borderRadius: 'var(--radius-md)',
+    border: '1.5px solid #fca5a5', background: '#fff8f8',
+    color: '#b91c1c', fontWeight: 700, fontSize: 13, cursor: 'pointer',
   },
 };

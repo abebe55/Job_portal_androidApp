@@ -25,8 +25,8 @@ function SumCard({ label, value, iconBg, icon }: {
   label: string; value: string | number; iconBg: string; icon: React.ReactNode;
 }) {
   return (
-    <div style={sc.card}>
-      <div style={{ ...sc.icon, background: iconBg }}>{icon}</div>
+    <div className="jp-stat-card">
+      <div className="jp-icon-tile" style={{ background: iconBg }}>{icon}</div>
       <div style={sc.value}>{value}</div>
       <div style={sc.label}>{label}</div>
     </div>
@@ -70,15 +70,6 @@ export default function TransactionsPage() {
 
   return (
     <AdminLayout>
-
-      {/* ── Page header ── */}
-      <div style={p.pageHeader}>
-        <div>
-          <h1 style={p.pageTitle}>Transactions</h1>
-          <p style={p.pageSub}>Full record of all wallet movements across the platform</p>
-        </div>
-      </div>
-
       {/* ── Summary cards ── */}
       <div style={p.sumGrid}>
         <SumCard
@@ -116,7 +107,7 @@ export default function TransactionsPage() {
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
-            style={p.searchInput}
+            className="jp-search"
             placeholder="Search by user or reference…"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -134,7 +125,7 @@ export default function TransactionsPage() {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {FILTERS.map(f => (
             <button key={f}
-              style={{ ...p.filterBtn, ...(filter === f ? p.filterActive : {}) }}
+              className={`jp-chip${filter === f ? ' active' : ''}`}
               onClick={() => setFilter(f)}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -146,14 +137,14 @@ export default function TransactionsPage() {
       </div>
 
       {/* ── Table ── */}
-      <div style={p.tableCard}>
+      <div className="jp-card-static">
         {loading ? (
-          <div style={p.loadingBox}>
-            <div style={p.spinner} />
+          <div className="jp-loading">
+            <div className="jp-spinner" />
             <p style={{ marginTop: 12, color: 'var(--text-sub)', fontWeight: 500 }}>Loading transactions…</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={p.emptyBox}>
+          <div className="jp-empty">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
               <line x1="12" y1="1" x2="12" y2="23"/>
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
@@ -162,15 +153,15 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={p.table}>
+            <table className="jp-table" style={{ minWidth: 700 }}>
               <thead>
                 <tr>
-                  <th style={p.th}>User / Wallet</th>
-                  <th style={p.th}>Type</th>
-                  <th style={p.th}>Amount</th>
-                  <th style={p.th}>Status</th>
-                  <th style={p.th}>Reference</th>
-                  <th style={p.th}>Date</th>
+                  <th>User / Wallet</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,10 +171,7 @@ export default function TransactionsPage() {
                   const isInflow = tx.tx_type === 'deposit' || tx.tx_type === 'refund';
 
                   return (
-                    <tr key={tx.id} style={p.tr}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
-                    >
+                    <tr key={tx.id}>
                       {/* User */}
                       <td style={p.td}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -251,8 +239,8 @@ const p: Record<string, React.CSSProperties> = {
 
   sumGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
-    gap: 16, marginBottom: 20,
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 12, marginBottom: 16,
   },
 
   toolBar: {
@@ -284,8 +272,8 @@ const p: Record<string, React.CSSProperties> = {
     fontSize: 12, fontWeight: 600, color: 'var(--text-sub)', cursor: 'pointer',
   },
   filterActive: {
-    background: 'var(--primary)', color: '#fff',
-    border: '1.5px solid var(--primary)',
+    background: '#eff6ff', color: '#1d4ed8',
+    border: '1.5px solid #3b82f6',
   },
 
   countBadge: {

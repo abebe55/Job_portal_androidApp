@@ -401,7 +401,7 @@ export default function MyCVScreen() {
         )}
 
         <TouchableOpacity style={st.updateBtn} onPress={() => router.push('/(tabs)/cv')}>
-          <Ionicons name="create-outline" size={18} color="#fff" />
+          <Ionicons name="create-outline" size={16} color="#1d4ed8" />
           <Text style={st.updateBtnTxt}>Update My CV</Text>
         </TouchableOpacity>
 
@@ -463,8 +463,12 @@ const st = StyleSheet.create({
   langIcon:      { fontSize: 13, width: 18 },
   langLbl:       { fontSize: 13, color: C.textSub, fontWeight: '600', flex: 1 },
   langVal:       { fontSize: 13, fontWeight: '700' },
-  updateBtn:     { backgroundColor: C.primary, borderRadius: 13, padding: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 },
-  updateBtnTxt:  { color: '#fff', fontSize: 15, fontWeight: '800' },
+  updateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#93c5fd',
+    borderRadius: 10, paddingVertical: 12, marginTop: 10,
+  },
+  updateBtnTxt: { color: '#1d4ed8', fontSize: 14, fontWeight: '700' },
 });
 
 // Full-width section card — no border, shadow only

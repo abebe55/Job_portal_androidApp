@@ -29,17 +29,10 @@ export default function CommissionPage() {
 
   return (
     <AdminLayout>
-
-      {/* ── Page header ── */}
-      <div style={p.pageHeader}>
-        <h1 style={p.pageTitle}>Commission Settings</h1>
-        <p style={p.pageSub}>Configure the fee charged to employers when they post a job</p>
-      </div>
-
-      <div style={p.layout}>
+      <div className="jp-layout-side" style={p.layout}>
 
         {/* ── Main settings card ── */}
-        <div style={p.card}>
+        <div className="jp-card-static" style={p.card}>
 
           {/* Current fee display */}
           {current && (
@@ -79,6 +72,7 @@ export default function CommissionPage() {
                 <div style={p.inputWrap}>
                   <span style={p.inputPrefix}>ETB</span>
                   <input
+                    className="jp-input"
                     style={p.input}
                     type="number"
                     min="0"
@@ -89,7 +83,7 @@ export default function CommissionPage() {
                     required
                   />
                 </div>
-                <button style={{ ...p.saveBtn, opacity: saving ? 0.7 : 1 }} type="submit" disabled={saving}>
+                <button className="jp-btn jp-btn-primary" type="submit" disabled={saving}>
                   {saving ? (
                     <>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
@@ -145,7 +139,7 @@ export default function CommissionPage() {
         </div>
 
         {/* ── Info side panel ── */}
-        <div style={p.infoPanel}>
+        <div className="jp-card-static" style={p.infoPanel}>
           <p style={p.infoPanelTitle}>How it works</p>
 
           {[
@@ -187,10 +181,6 @@ export default function CommissionPage() {
 
 /* ─── Styles ─────────────────────────────────────────────── */
 const p: Record<string, React.CSSProperties> = {
-  pageHeader: { marginBottom: 28 },
-  pageTitle:  { fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 4 },
-  pageSub:    { fontSize: 14, color: 'var(--text-sub)' },
-
   layout: {
     display: 'grid',
     gridTemplateColumns: '1fr 340px',
@@ -199,10 +189,6 @@ const p: Record<string, React.CSSProperties> = {
   },
 
   card: {
-    background: 'var(--surface)',
-    borderRadius: 'var(--radius-lg)',
-    border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-card)',
     padding: '24px 28px',
     display: 'flex', flexDirection: 'column', gap: 20,
   },
@@ -249,18 +235,7 @@ const p: Record<string, React.CSSProperties> = {
     flex: 1, width: '100%',
     paddingTop: 12, paddingBottom: 12,
     paddingLeft: 46, paddingRight: 14,
-    borderRadius: 'var(--radius-md)',
-    border: '1.5px solid var(--border)',
     fontSize: 16, fontWeight: 600,
-    color: 'var(--text)', background: 'var(--bg)', outline: 'none',
-  },
-  saveBtn: {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '12px 22px',
-    borderRadius: 'var(--radius-md)',
-    border: 'none', background: 'var(--primary)',
-    color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-    whiteSpace: 'nowrap',
   },
 
   noteBox: {
@@ -271,10 +246,6 @@ const p: Record<string, React.CSSProperties> = {
 
   /* Info panel */
   infoPanel: {
-    background: 'var(--surface)',
-    borderRadius: 'var(--radius-lg)',
-    border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-card)',
     padding: '20px 22px',
     display: 'flex', flexDirection: 'column', gap: 16,
   },

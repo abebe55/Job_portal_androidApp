@@ -37,12 +37,12 @@ function ActionBtn({
   variant?: 'blue' | 'green' | 'yellow' | 'red' | 'gray' | 'primary';
 }) {
   const map = {
-    blue:    { bg: '#dbeafe', color: '#1d4ed8' },
-    green:   { bg: '#dcfce7', color: '#15803d' },
-    yellow:  { bg: '#fef3c7', color: '#b45309' },
-    red:     { bg: '#fee2e2', color: '#b91c1c' },
-    gray:    { bg: '#f3f4f6', color: '#374151' },
-    primary: { bg: 'var(--primary)', color: '#fff' },
+    blue:    { bg: '#ffffff', color: '#1d4ed8', border: '#93c5fd' },
+    green:   { bg: '#ffffff', color: '#15803d', border: '#86efac' },
+    yellow:  { bg: '#ffffff', color: '#b45309', border: '#fcd34d' },
+    red:     { bg: '#ffffff', color: '#b91c1c', border: '#fca5a5' },
+    gray:    { bg: '#f9fafb', color: '#374151', border: '#e5e7eb' },
+    primary: { bg: '#ffffff', color: '#1d4ed8', border: '#93c5fd' },
   };
   const c = map[variant];
   return (
@@ -51,11 +51,11 @@ function ActionBtn({
       onClick={onClick}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 4,
-        padding: '5px 12px', borderRadius: 'var(--radius-md)', border: 'none',
-        fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const,
+        padding: '5px 12px',
         opacity: disabled ? 0.5 : 1,
-        background: c.bg, color: c.color,
+        background: c.bg, color: c.color, border: `1.5px solid ${c.border}`,
       }}
+      className="jp-btn"
     >
       {children}
     </button>
@@ -145,14 +145,6 @@ export default function UsersPage() {
   return (
     <AdminLayout>
 
-      {/* ── Page header ── */}
-      <div style={p.pageHeader}>
-        <div>
-          <h1 style={p.pageTitle}>User Management</h1>
-          <p style={p.pageSub}>Manage user accounts, roles and permissions</p>
-        </div>
-      </div>
-
       {/* ── Alerts ── */}
       {successMsg && <Alert type="success" msg={successMsg} onClose={() => setSuccessMsg('')} />}
       {errorMsg   && <Alert type="error"   msg={errorMsg}   onClose={() => setErrorMsg('')}   />}
@@ -165,7 +157,7 @@ export default function UsersPage() {
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
-            style={p.searchInput}
+            className="jp-search"
             placeholder="Search by name, email or location…"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -183,7 +175,7 @@ export default function UsersPage() {
         <div style={{ display: 'flex', gap: 6 }}>
           {(['all', 'jobseeker', 'employer', 'admin'] as const).map(f => (
             <button key={f}
-              style={{ ...p.filterBtn, ...(filter === f ? p.filterActive : {}) }}
+              className={`jp-chip${filter === f ? ' active' : ''}`}
               onClick={() => setFilter(f)}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -200,14 +192,14 @@ export default function UsersPage() {
       </div>
 
       {/* ── Table ── */}
-      <div style={p.tableCard}>
+      <div className="jp-card-static">
         {loading ? (
-          <div style={p.loadingBox}>
-            <div style={p.spinner} />
+          <div className="jp-loading">
+            <div className="jp-spinner" />
             <p style={{ marginTop: 12, color: 'var(--text-sub)', fontWeight: 500 }}>Loading users…</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={p.emptyBox}>
+          <div className="jp-empty">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -220,16 +212,16 @@ export default function UsersPage() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={p.table}>
+            <table className="jp-table" style={{ minWidth: 800 }}>
               <thead>
                 <tr>
-                  <th style={p.th}>User</th>
-                  <th style={p.th}>Email</th>
-                  <th style={p.th}>Role</th>
-                  <th style={p.th}>Phone</th>
-                  <th style={p.th}>Location</th>
-                  <th style={p.th}>Status</th>
-                  <th style={{ ...p.th, textAlign: 'right' }}>Actions</th>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Phone</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,10 +231,7 @@ export default function UsersPage() {
                   const busy   = acting === u.id;
 
                   return (
-                    <tr key={u.id} style={p.tr}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
-                    >
+                    <tr key={u.id}>
                       {/* User cell */}
                       <td style={p.td}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -354,7 +343,7 @@ export default function UsersPage() {
                 <div key={f.key} style={m.field}>
                   <label style={m.label}>{f.label}</label>
                   <input
-                    style={m.input}
+                    className="jp-input"
                     type={f.type}
                     value={(editForm as any)[f.key]}
                     onChange={e => setEditForm(prev => ({ ...prev, [f.key]: e.target.value }))}
@@ -366,7 +355,7 @@ export default function UsersPage() {
               <div style={m.field}>
                 <label style={m.label}>Role</label>
                 <select
-                  style={m.input}
+                  className="jp-input"
                   value={editForm.role}
                   onChange={e => setEditForm(prev => ({ ...prev, role: e.target.value }))}
                 >
@@ -379,9 +368,10 @@ export default function UsersPage() {
 
             {/* Footer */}
             <div style={m.footer}>
-              <button style={m.cancelBtn} onClick={() => setEditUser(null)}>Cancel</button>
+              <button className="jp-btn jp-btn-ghost" onClick={() => setEditUser(null)}>Cancel</button>
               <button
-                style={{ ...m.saveBtn, opacity: acting === editUser.id ? 0.7 : 1 }}
+                className="jp-btn jp-btn-primary"
+                style={{ opacity: acting === editUser.id ? 0.7 : 1 }}
                 disabled={acting === editUser.id}
                 onClick={handleEditSave}
               >
@@ -432,8 +422,8 @@ const p: Record<string, React.CSSProperties> = {
     fontSize: 12, fontWeight: 600, color: 'var(--text-sub)', cursor: 'pointer',
   },
   filterActive: {
-    background: 'var(--primary)', color: '#fff',
-    border: '1.5px solid var(--primary)',
+    background: '#eff6ff', color: '#1d4ed8',
+    border: '1.5px solid #3b82f6',
   },
 
   totalBadge: {
@@ -544,7 +534,8 @@ const m: Record<string, React.CSSProperties> = {
   },
   saveBtn: {
     padding: '9px 24px', borderRadius: 'var(--radius-md)',
-    border: 'none', background: 'var(--primary)',
-    fontSize: 13, fontWeight: 700, color: '#fff', cursor: 'pointer',
+    border: '1.5px solid #93c5fd',
+    background: '#ffffff',
+    fontSize: 13, fontWeight: 700, color: '#1d4ed8', cursor: 'pointer',
   },
 };

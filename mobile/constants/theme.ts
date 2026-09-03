@@ -3,7 +3,7 @@ import { Dimensions, Platform } from 'react-native';
 const { width } = Dimensions.get('window');
 
 // ── Colours ───────────────────────────────────────────────────────────────────
-const PRIMARY       = '#6c63ff';   // indigo-violet — matches sample project
+const PRIMARY       = '#6c63ff';
 const PRIMARY_DARK  = '#5a52d5';
 const PRIMARY_LIGHT = '#f0eeff';
 
@@ -32,71 +32,88 @@ export const C = {
 };
 
 // ── Responsive layout ─────────────────────────────────────────────────────────
-// On web (PC) content is wide — use larger horizontal padding.
-// On mobile keep it tight.
-const isWeb   = Platform.OS === 'web';
-const isWide  = width > 768;   // tablet / PC
+const isWeb  = Platform.OS === 'web';
 
 export const LAYOUT = {
-  // Horizontal padding for list content and scroll containers
-  px:        isWide ? 40  : 16,
-  // Max content width on wide screens
-  maxWidth:  isWide ? 800 : undefined as number | undefined,
-  // Card inner padding
-  cardPad:   16,
+  // On web, content fills the full available area — no maxWidth restriction
+  px:       isWeb ? 0 : 16,   // WebLayout owns padding on web
+  maxWidth: undefined as number | undefined,
+  cardPad:  16,
 };
 
 // ── Shared style primitives ───────────────────────────────────────────────────
 export const S = {
   page: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: '#f8f9fc',
   },
 
-  // Standard content wrapper — use as contentContainerStyle on ScrollView/FlatList
+  // For ScrollView / FlatList contentContainerStyle on MOBILE only.
+  // On web, WebLayout.content handles all padding.
   content: {
-    paddingHorizontal: LAYOUT.px,
-    paddingTop: 14,
-    paddingBottom: 40,
-    ...(isWide && LAYOUT.maxWidth
-      ? { alignSelf: 'center' as const, width: '100%' as const, maxWidth: LAYOUT.maxWidth }
-      : {}),
+    paddingHorizontal: isWeb ? 0 : 16,
+    paddingTop: isWeb ? 0 : 14,
+    paddingBottom: isWeb ? 0 : 40,
   },
 
   card: {
-    backgroundColor: C.surface,
-    borderRadius: 14,
-    padding: LAYOUT.cardPad,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
     shadowColor: '#6c63ff',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(108,99,255,0.08)',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
   input: {
-    backgroundColor: C.surface,
+    backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 13,
     fontSize: 15,
     fontWeight: '500' as const,
     borderWidth: 1.5,
-    borderColor: C.border,
-    color: C.text,
+    borderColor: '#e5e7eb',
+    color: '#1a1a2e',
     marginBottom: 12,
   },
 
+  // ── Primary button: white background + strong blue/purple text + border
+  // Matches sample project — NOT a filled solid button
   btn: {
-    backgroundColor: PRIMARY,
-    padding: 14,
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#c4b5fd',
+    padding: 13,
     borderRadius: 10,
     alignItems: 'center' as const,
     marginTop: 4,
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    gap: 6,
   },
   btnText: {
+    color: '#1d4ed8',          // strong blue, matches sample
+    fontSize: 15,
+    fontWeight: '700' as const,
+  },
+
+  // Solid primary (for high-emphasis actions only)
+  btnSolid: {
+    backgroundColor: PRIMARY,
+    padding: 13,
+    borderRadius: 10,
+    alignItems: 'center' as const,
+    marginTop: 4,
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    gap: 6,
+  },
+  btnSolidText: {
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '700' as const,
@@ -120,7 +137,7 @@ export const S = {
   sectionTitle: {
     fontSize: 12,
     fontWeight: '800' as const,
-    color: C.textSub,
+    color: '#6b7280',
     textTransform: 'uppercase' as const,
     letterSpacing: 0.6,
     marginBottom: 10,
@@ -137,21 +154,4 @@ export const S = {
     color: PRIMARY,
     overflow: 'hidden' as const,
   },
-
-  badge: (bg: string, color: string) => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    backgroundColor: bg,
-    alignSelf: 'flex-start' as const,
-  }),
-  badgeText: (color: string) => ({
-    fontSize: 11,
-    fontWeight: '700' as const,
-    color,
-  }),
 };
