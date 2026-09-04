@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, ScrollView, Platform,
+  ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -58,7 +58,7 @@ function EmployerHome() {
     <View style={S.page}>
       <PageHeader title={t('employerDashboard')} />
       <ScrollView
-        contentContainerStyle={[S.content, { paddingTop: Platform.OS === 'web' ? 0 : 16 }]}
+        contentContainerStyle={S.content}
         showsVerticalScrollIndicator={false}
       >
         {/* Welcome */}

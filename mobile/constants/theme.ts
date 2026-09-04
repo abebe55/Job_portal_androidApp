@@ -35,9 +35,7 @@ export const C = {
 const isWeb  = Platform.OS === 'web';
 
 export const LAYOUT = {
-  // On web, content fills the full available area — no maxWidth restriction
-  px:       isWeb ? 0 : 16,   // WebLayout owns padding on web
-  maxWidth: undefined as number | undefined,
+  px:       16,   // uniform horizontal padding for ALL screens on ALL platforms
   cardPad:  16,
 };
 
@@ -48,12 +46,11 @@ export const S = {
     backgroundColor: '#f8f9fc',
   },
 
-  // For ScrollView / FlatList contentContainerStyle on MOBILE only.
-  // On web, WebLayout.content handles all padding.
+  // Standard content padding — same on ALL platforms. WebLayout adds 0 outer padding.
   content: {
-    paddingHorizontal: isWeb ? 0 : 16,
-    paddingTop: isWeb ? 0 : 14,
-    paddingBottom: isWeb ? 0 : 40,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 40,
   },
 
   card: {

@@ -326,9 +326,8 @@ const hd = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     flexShrink: 0,
-    // sticky
     position: 'sticky' as any,
     top: 0,
     zIndex: 30,
@@ -392,6 +391,6 @@ const wl = StyleSheet.create({
 
   content: {
     flex: 1,
-    padding: 20,
+    padding: 0,   // NO padding from wrapper — each screen owns its own padding
   },
 });

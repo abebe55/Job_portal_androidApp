@@ -959,7 +959,7 @@ export default function CVScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
-  scroll:       { paddingLeft: 60, paddingRight: 60, paddingTop: 14, paddingBottom: 48 },
+  scroll:       { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 48 },
   tabBarWrap:   { backgroundColor: C.white, borderBottomWidth: 1.5, borderBottomColor: C.border },
   tabContent:   { paddingHorizontal: 10, paddingVertical: 8, gap: 6, alignItems: 'center' },
   optionalTip:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 5, backgroundColor: '#fffbeb', borderTopWidth: 1, borderTopColor: '#fde68a' },
