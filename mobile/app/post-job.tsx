@@ -67,11 +67,39 @@ const WORK_MODES = [
 ];
 
 // ── Reusable Dropdown ─────────────────────────────────────────────────────────
+// On web: uses native <select> — compact, no modal overlay
+// On native: uses Modal bottom sheet
 function Dropdown({ label, value, options, onChange, placeholder, required }: {
   label: string; value: string; options: string[];
   onChange: (v: string) => void; placeholder?: string; required?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={s.fieldWrap}>
+        <Text style={s.label}>{label}{required ? <Text style={{ color: C.danger }}> *</Text> : ''}</Text>
+        <View style={s.dropBtn}>
+          <select
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            style={{
+              flex: 1, border: 'none', background: 'transparent',
+              fontSize: 13, color: value ? C.text : C.textSub,
+              outline: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', width: '100%',
+              paddingTop: 0, paddingBottom: 0,
+            }}
+          >
+            <option value="" disabled>{placeholder || 'Select...'}</option>
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </View>
+      </View>
+    );
+  }
+
+  // Native modal
   return (
     <View style={s.fieldWrap}>
       <View style={s.labelRow}>

@@ -224,6 +224,30 @@ function Row2({ children }: any) { return <View style={{ flexDirection: 'row', g
 
 function Drop({ label, req, value, options, onChange }: any) {
   const [open, setOpen] = useState(false);
+
+  // On web: use native <select> — no full-page modal
+  if (Platform.OS === 'web') {
+    return (
+      <Fld label={label} req={req}>
+        <View style={fld.drop}>
+          <select
+            value={value || ''}
+            onChange={e => onChange(e.target.value)}
+            style={{
+              flex: 1, border: 'none', background: 'transparent',
+              fontSize: 13, color: value ? C.text : C.textSub,
+              outline: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', width: '100%',
+            }}
+          >
+            <option value="" disabled>Select...</option>
+            {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </View>
+      </Fld>
+    );
+  }
+
   return (
     <Fld label={label} req={req}>
       <TouchableOpacity style={fld.drop} onPress={() => setOpen(true)}>
