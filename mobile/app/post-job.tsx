@@ -601,19 +601,19 @@ const s = StyleSheet.create({
   modalItemTxt: { fontSize: 14, color: C.text, fontWeight: '500' },
   modalItemActiveTxt: { color: C.primary, fontWeight: '700' },
 
-  // Job type cards
+  // Job type / work mode cards — outline style, no fill
   chipGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  typeCard:     { flex: 1, minWidth: '45%', flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.white },
+  typeCard:     { flex: 1, minWidth: '45%', flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: C.border, backgroundColor: '#fff' },
   typeCardActive: { backgroundColor: '#f0eeff', borderColor: C.primary },
-  typeCardTxt:  { fontSize: 13, fontWeight: '600', color: C.textSub },
-  typeCardTxtActive: { color: C.primary, fontWeight: '800' },
+  typeCardTxt:  { fontSize: 12, fontWeight: '600', color: C.textSub },
+  typeCardTxtActive: { color: C.primary, fontWeight: '700' },
 
   // Skill level cards
   levelRow:     { flexDirection: 'row', gap: 8, marginTop: 6 },
-  levelCard:    { flex: 1, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.white, alignItems: 'center' },
+  levelCard:    { flex: 1, padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: C.border, backgroundColor: '#fff', alignItems: 'center' },
   levelCardActive: { backgroundColor: '#f0eeff', borderColor: C.primary },
   levelCardTitle: { fontSize: 12, fontWeight: '700', color: C.text, textAlign: 'center' },
-  levelCardDesc:  { fontSize: 10, color: C.textSub, marginTop: 2, textAlign: 'center' },
+  levelCardDesc:  { fontSize: 10, color: C.textSub, marginTop: 1, textAlign: 'center' },
 
   // Chips
   chipRow:      { flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' },

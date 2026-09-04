@@ -73,8 +73,8 @@ export default function WalletScreen() {
 
         {/* Balance card */}
         <View style={styles.balanceCard}>
-          <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="wallet-outline" size={24} color={C.primary} />
+          <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="wallet-outline" size={20} color={C.primary} />
           </View>
           <View>
             <Text style={styles.balanceLabel}>Available Balance</Text>
@@ -174,51 +174,48 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 },
   balanceCard: {
-    backgroundColor: C.primary,
-    borderRadius: 16,
-    padding: 20, marginBottom: 14,
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25, shadowRadius: 12, elevation: 5,
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: C.border,
     flexDirection: 'row', alignItems: 'center', gap: 14,
   },
-  balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  balanceAmount: { color: '#fff', fontSize: 28, fontWeight: '800', marginTop: 2 },
+  balanceLabel: { color: C.textSub, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  balanceAmount: { color: C.primary, fontSize: 24, fontWeight: '800', marginTop: 2 },
   section: {
-    backgroundColor: C.surface, borderRadius: 14, padding: 16, marginBottom: 14,
-    shadowColor: '#6c63ff', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+    backgroundColor: C.surface, borderRadius: 12, padding: 14, marginBottom: 12,
     borderWidth: 1, borderColor: C.border,
   },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 6 },
-  hint: { fontSize: 12, color: C.textSub, marginBottom: 12 },
-  amountRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 4 },
+  hint: { fontSize: 11, color: C.textSub, marginBottom: 10 },
+  amountRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   amountInput: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 12,
+    backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 10,
     borderWidth: 1.5, borderColor: C.border,
   },
-  amountField: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.text },
+  amountField: { flex: 1, paddingVertical: 10, fontSize: 14, color: C.text, outlineStyle: 'none' as any },
   payBtn: {
-    backgroundColor: '#ffffff', borderRadius: 10, paddingHorizontal: 18,
-    paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#ffffff', borderRadius: 8, paddingHorizontal: 16,
+    paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 5,
     borderWidth: 1.5, borderColor: '#93c5fd',
   },
-  payBtnText: { color: '#1d4ed8', fontWeight: '700', fontSize: 14 },
-  quickRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  payBtnText: { color: '#1d4ed8', fontWeight: '700', fontSize: 13 },
+  quickRow: { flexDirection: 'row', gap: 6, marginTop: 10, flexWrap: 'wrap' },
   quickChip: {
-    flex: 1, backgroundColor: C.primaryLight, borderRadius: 8,
-    paddingVertical: 8, alignItems: 'center',
-    borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: '#ffffff', borderRadius: 7,
+    paddingVertical: 7, alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#c4b5fd', minWidth: 60,
   },
-  quickChipText: { color: C.primary, fontWeight: '700', fontSize: 13 },
+  quickChipText: { color: C.primary, fontWeight: '700', fontSize: 12 },
   txRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.borderLight,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.borderLight,
   },
-  txIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  txType: { fontSize: 13, fontWeight: '700', color: C.text },
+  txIcon: { width: 34, height: 34, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  txType: { fontSize: 13, fontWeight: '600', color: C.text },
   txDesc: { fontSize: 11, color: C.textSub, marginTop: 1 },
-  txAmount: { fontSize: 14, fontWeight: '700' },
+  txAmount: { fontSize: 13, fontWeight: '700' },
   txDate: { fontSize: 10, color: C.textSub, marginTop: 2 },
   empty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   emptyText: { color: C.textSub, fontSize: 13 },

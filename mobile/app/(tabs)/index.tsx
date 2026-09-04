@@ -64,11 +64,11 @@ function EmployerHome() {
         {/* Welcome */}
         <View style={st.welcomeCard}>
           <View style={{ flex: 1 }}>
-            <Text style={st.welcomeHi}>{t('hello')}, {user?.username} 👋</Text>
+            <Text style={st.welcomeHi}>Hello, {user?.username}</Text>
             <Text style={st.welcomeSub}>{t('manageJobs')}</Text>
           </View>
           <View style={st.welcomeIcon}>
-            <Ionicons name="business" size={24} color={C.primary} />
+            <Ionicons name="briefcase-outline" size={20} color={C.primary} />
           </View>
         </View>
 
@@ -92,11 +92,11 @@ function EmployerHome() {
           {quickActions.map(a => (
             <TouchableOpacity
               key={a.label}
-              style={[st.actionCard, { backgroundColor: a.bg }]}
+              style={st.actionCard}
               onPress={() => router.push(a.path as any)}
             >
-              <View style={[st.actionIconWrap, { backgroundColor: a.color + '22' }]}>
-                <Ionicons name={a.icon as any} size={22} color={a.color} />
+              <View style={[st.actionIconWrap, { backgroundColor: a.color + '15' }]}>
+                <Ionicons name={a.icon as any} size={20} color={a.color} />
               </View>
               <Text style={[st.actionLabel, { color: a.color }]}>{a.label}</Text>
             </TouchableOpacity>
@@ -112,7 +112,7 @@ function EmployerHome() {
             <Ionicons name="briefcase-outline" size={36} color={C.border} />
             <Text style={st.emptyTitle}>{t('noJobsPosted')}</Text>
             <TouchableOpacity style={st.postBtn} onPress={() => router.push('/post-job')}>
-              <Ionicons name="add" size={16} color="#fff" />
+              <Ionicons name="add" size={14} color="#1d4ed8" />
               <Text style={st.postBtnText}>{t('postYourFirstJob')}</Text>
             </TouchableOpacity>
           </View>
@@ -285,37 +285,35 @@ const st = StyleSheet.create({
   // Employer
   welcomeCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.primary, borderRadius: 14,
-    padding: 18, marginBottom: 16,
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25, shadowRadius: 12, elevation: 5,
-  },
-  welcomeHi:    { fontSize: 16, fontWeight: '800', color: '#fff', marginBottom: 3 },
-  welcomeSub:   { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
-  welcomeIcon:  { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  statCard: {
-    flex: 1, backgroundColor: C.surface, borderRadius: 12,
-    padding: 12, alignItems: 'center',
-    borderTopWidth: 3,
+    backgroundColor: C.surface,
+    borderRadius: 10, padding: 14, marginBottom: 14,
     borderWidth: 1, borderColor: C.border,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  statNum:   { fontSize: 22, fontWeight: '800', marginBottom: 3 },
+  welcomeHi:    { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 2 },
+  welcomeSub:   { fontSize: 12, color: C.textSub },
+  welcomeIcon:  { width: 36, height: 36, borderRadius: 9, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center' },
+
+  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  statCard: {
+    flex: 1, backgroundColor: C.surface, borderRadius: 10,
+    padding: 12, alignItems: 'center',
+    borderTopWidth: 2,
+    borderWidth: 1, borderColor: C.border,
+  },
+  statNum:   { fontSize: 20, fontWeight: '800', marginBottom: 3 },
   statLabel: { fontSize: 11, color: C.textSub, fontWeight: '600', textAlign: 'center' },
 
-  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   actionCard: {
-    width: '48%', borderRadius: 14, padding: 16,
-    alignItems: 'center', gap: 10,
+    width: '48%', borderRadius: 10, padding: 14,
+    alignItems: 'center', gap: 8,
+    backgroundColor: C.surface,
     borderWidth: 1, borderColor: C.border,
   },
-  actionIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  actionLabel:    { fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  actionIconWrap: { width: 36, height: 36, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  actionLabel:    { fontSize: 13, fontWeight: '600', textAlign: 'center', color: C.text },
 
-  emptyCard:  { backgroundColor: C.surface, borderRadius: 14, padding: 28, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: C.border },
+  emptyCard:  { backgroundColor: C.surface, borderRadius: 10, padding: 20, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: C.border },
   postBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#93c5fd',
@@ -324,15 +322,15 @@ const st = StyleSheet.create({
   postBtnText: { color: '#1d4ed8', fontWeight: '700', fontSize: 13 },
 
   jobRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: C.surface, borderRadius: 12, padding: 14,
-    marginBottom: 8, borderWidth: 1, borderColor: C.border,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: C.surface, borderRadius: 8, padding: 10,
+    marginBottom: 6, borderWidth: 1, borderColor: C.border,
   },
-  jobRowTitle: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 2 },
-  jobRowMeta:  { fontSize: 12, color: C.textSub },
-  statusPill:  { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, flexShrink: 0 },
-  statusPillText: { fontSize: 11, fontWeight: '700' },
+  jobRowTitle: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 1 },
+  jobRowMeta:  { fontSize: 11, color: C.textSub },
+  statusPill:  { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, flexShrink: 0 },
+  statusPillText: { fontSize: 10, fontWeight: '700' },
 
-  viewAllBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12 },
-  viewAllText: { color: C.primary, fontWeight: '700', fontSize: 14 },
+  viewAllBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8 },
+  viewAllText: { color: C.primary, fontWeight: '700', fontSize: 13 },
 });
