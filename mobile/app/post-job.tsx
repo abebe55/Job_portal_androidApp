@@ -2,10 +2,12 @@ import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Modal, Platform,
-} from 'react-native';import { useRouter } from 'expo-router';
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { createJob } from '../services/api';
 import PageHeader from '../components/PageHeader';
+import WebLayout from '../components/WebLayout';
 import { C } from '../constants/theme';
 
 // ── Options ───────────────────────────────────────────────────────────────────
@@ -201,6 +203,7 @@ export default function PostJobScreen() {
   };
 
   return (
+    <WebLayout title="Post a Job" subtitle="Submit a new job posting for review">
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <PageHeader title="Post a Job" showBack />
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
@@ -227,21 +230,37 @@ export default function PostJobScreen() {
             <Text style={s.sectionTitle}>Job Identity</Text>
           </View>
 
-          <Field label="Job Title" required>
-            <TextInput style={s.input} value={form.title}
-              onChangeText={v => set('title', v)} placeholder="e.g. Senior Software Developer"
-              placeholderTextColor={C.textSub} />
-          </Field>
+          {/* 2-col: Title EN + Title Amharic */}
+          <View style={s.fieldRow}>
+            <View style={s.fieldHalf}>
+              <Field label="Job Title" required>
+                <TextInput style={s.input} value={form.title}
+                  onChangeText={v => set('title', v)} placeholder="e.g. Senior Software Developer"
+                  placeholderTextColor={C.textSub} />
+              </Field>
+            </View>
+            <View style={s.fieldHalf}>
+              <Field label="Job Title in Amharic">
+                <TextInput style={s.input} value={form.title_am}
+                  onChangeText={v => set('title_am', v)} placeholder="e.g. ሲኒየር ሶፍትዌር ዲቨሎፐር"
+                  placeholderTextColor={C.textSub} />
+              </Field>
+            </View>
+          </View>
 
-          <Field label="Job Title in Amharic (Optional)">
-            <TextInput style={s.input} value={form.title_am}
-              onChangeText={v => set('title_am', v)} placeholder="e.g. ሲኒየር ሶፍትዌር ዲቨሎፐር"
-              placeholderTextColor={C.textSub} />
-          </Field>
-
-          <Dropdown label="Skill Type" required value={form.skill_type}
-            options={SKILL_TYPES} onChange={v => set('skill_type', v)}
-            placeholder="Select skill type..." />
+          {/* 2-col: Skill Type + Location */}
+          <View style={s.fieldRow}>
+            <View style={s.fieldHalf}>
+              <Dropdown label="Skill Type" required value={form.skill_type}
+                options={SKILL_TYPES} onChange={v => set('skill_type', v)}
+                placeholder="Select skill type..." />
+            </View>
+            <View style={s.fieldHalf}>
+              <Dropdown label="Location" required value={form.location}
+                options={LOCATIONS} onChange={v => set('location', v)}
+                placeholder="Select city or region..." />
+            </View>
+          </View>
 
           {form.skill_type === 'Other' && (
             <Field label="Specify Skill Type" required>
@@ -258,10 +277,6 @@ export default function PostJobScreen() {
               placeholder="e.g. Ethio Telecom, ABC Trading PLC, Self-employed..."
               placeholderTextColor={C.textSub} />
           </Field>
-
-          <Dropdown label="Location" required value={form.location}
-            options={LOCATIONS} onChange={v => set('location', v)}
-            placeholder="Select city or region..." />
         </View>
 
         {/* ── Section 2: Job Type & Level ── */}
@@ -338,11 +353,17 @@ export default function PostJobScreen() {
             ))}
           </View>
 
-          <Dropdown label="Number of Vacancies (How many people to hire)" value={form.vacancies}
-            options={VACANCY_OPTIONS} onChange={v => set('vacancies', v)} />
-
-          <Dropdown label="Gender Preference" value={form.gender_preference}
-            options={GENDER_OPTIONS} onChange={v => set('gender_preference', v)} />
+          {/* 2-col: Vacancies + Gender */}
+          <View style={s.fieldRow}>
+            <View style={s.fieldHalf}>
+              <Dropdown label="Number of Vacancies" value={form.vacancies}
+                options={VACANCY_OPTIONS} onChange={v => set('vacancies', v)} />
+            </View>
+            <View style={s.fieldHalf}>
+              <Dropdown label="Gender Preference" value={form.gender_preference}
+                options={GENDER_OPTIONS} onChange={v => set('gender_preference', v)} />
+            </View>
+          </View>
         </View>
 
         {/* ── Section 3: Description ── */}
@@ -543,6 +564,7 @@ export default function PostJobScreen() {
         </Text>
       </ScrollView>
     </View>
+    </WebLayout>
   );
 }
 
@@ -555,16 +577,18 @@ const s = StyleSheet.create({
   errorText:    { flex: 1, color: C.danger, fontSize: 13 },
 
   // Section
-  section:      { backgroundColor: C.white, borderRadius: 14, padding: 16, marginBottom: 14, shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: 'rgba(124,58,237,0.07)' },
-  sectionHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
-  sectionTitle: { fontSize: 12, fontWeight: '800', color: C.primary, textTransform: 'uppercase', letterSpacing: 0.7 },
+  section:      { backgroundColor: C.white, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: C.border },
+  sectionHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 14, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  sectionTitle: { fontSize: 11, fontWeight: '800', color: C.primary, textTransform: 'uppercase', letterSpacing: 0.7 },
 
   // Fields
   fieldWrap:    { marginBottom: 12 },
+  fieldRow:     { flexDirection: 'row', gap: 12 },     // 2-col row for paired fields
+  fieldHalf:    { flex: 1 },                            // half-width field in 2-col
   labelRow:     { marginBottom: 5 },
   label:        { fontSize: 12, color: C.textSub, fontWeight: '700', marginBottom: 5 },
-  input:        { backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 12, fontSize: 14, color: C.text, borderWidth: 1, borderColor: C.border },
-  multiline:    { minHeight: 90, textAlignVertical: 'top' },
+  input:        { backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11, fontSize: 13, color: C.text, borderWidth: 1, borderColor: C.border, outlineStyle: 'none' as any },
+  multiline:    { minHeight: 80, textAlignVertical: 'top' },
 
   // Dropdown
   dropBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.bg, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 12, borderWidth: 1, borderColor: C.border },

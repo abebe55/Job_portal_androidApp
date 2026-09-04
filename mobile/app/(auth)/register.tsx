@@ -466,20 +466,22 @@ export default function RegisterScreen() {
 
             {error ? <View style={s.errorBox}><Ionicons name="alert-circle-outline" size={16} color={C.danger} /><Text style={s.errorText}>{error}</Text></View> : null}
 
+            <View style={s.empTypeGrid}>
             {EMPLOYER_TYPES.map(t => (
               <TouchableOpacity key={t.key}
                 style={[s.empTypeCard, empType === t.key && { borderColor: t.color, backgroundColor: t.color + '0d' }]}
                 onPress={() => setEmpType(t.key)}>
                 <View style={[s.empTypeIcon, { backgroundColor: t.color + '18' }]}>
-                  <Ionicons name={t.icon as any} size={22} color={t.color} />
+                  <Ionicons name={t.icon as any} size={20} color={t.color} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.empTypeTitle, empType === t.key && { color: t.color }]}>{t.label}</Text>
-                  <Text style={s.empTypeDesc}>{t.desc}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.empTypeTitle, empType === t.key && { color: t.color }]} numberOfLines={1}>{t.label}</Text>
+                  <Text style={s.empTypeDesc} numberOfLines={1}>{t.desc}</Text>
                 </View>
-                {empType === t.key && <Ionicons name="checkmark-circle" size={20} color={t.color} />}
+                {empType === t.key && <Ionicons name="checkmark-circle" size={18} color={t.color} />}
               </TouchableOpacity>
             ))}
+            </View>
 
             {empType === 'other' && (
               <View style={s.inputWrap}>
@@ -608,13 +610,13 @@ const s = StyleSheet.create({
   stepDotDone:   { backgroundColor: C.success },
   stepLine:   { width: 20, height: 2, backgroundColor: C.border },
 
+  // Main card — wider on web
   card: {
-    backgroundColor: '#fff', borderRadius: 16,
+    backgroundColor: '#fff', borderRadius: 14,
     marginHorizontal: 16, marginTop: 12, padding: 24,
-    width: Platform.OS === 'web' ? 480 : 'auto',
+    width: Platform.OS === 'web' ? Math.min(640, 900) : 'auto',
     maxWidth: '100%',
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12, shadowRadius: 24, elevation: 8,
+    borderWidth: 1, borderColor: C.border,
   },
   cardTitle:  { fontSize: 18, fontWeight: '800', color: C.text, marginBottom: 4 },
   cardSub:    { fontSize: 13, color: C.textSub, marginBottom: 18, lineHeight: 18 },
@@ -628,8 +630,9 @@ const s = StyleSheet.create({
   inputIcon:  { marginRight: 10 },
   input:      { flex: 1, paddingVertical: 13, fontSize: 14, color: C.text },
 
-  btn:        { backgroundColor: C.primary, borderRadius: 12, padding: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 },
-  btnText:    { color: '#fff', fontSize: 16, fontWeight: '700' },
+  // Continue/Next/Submit — white bg + blue text + border (NOT filled primary)
+  btn:        { backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#93c5fd', borderRadius: 10, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 },
+  btnText:    { color: '#1d4ed8', fontSize: 15, fontWeight: '700' },
   linkRow:    { flexDirection: 'row', justifyContent: 'center', marginTop: 18 },
   linkText:   { color: C.textSub, fontSize: 14 },
   linkBold:   { color: C.primary, fontSize: 14, fontWeight: '700' },
@@ -644,8 +647,9 @@ const s = StyleSheet.create({
   empNotice:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#dbeafe', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#93c5fd' },
   empNoticeText:  { flex: 1, fontSize: 12, color: '#1e40af', lineHeight: 18 },
 
-  // Employer type cards
-  empTypeCard:    { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderRadius: 13, borderWidth: 2, borderColor: C.border, backgroundColor: C.bg, marginBottom: 10 },
+  // Employer type cards — 2-col grid on web
+  empTypeCard:    { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 10, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg, marginBottom: 8, flex: 1, minWidth: Platform.OS === 'web' ? '45%' : '100%' },
+  empTypeGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   empTypeIcon:    { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   empTypeTitle:   { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 2 },
   empTypeDesc:    { fontSize: 12, color: C.textSub },

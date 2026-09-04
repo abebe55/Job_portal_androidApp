@@ -946,7 +946,7 @@ export default function CVScreen() {
         <TouchableOpacity style={st.saveBtn} onPress={save} disabled={saving}>
           {saving
             ? <ActivityIndicator color="#fff" size="small" />
-            : <><Ionicons name="save-outline" size={17} color="#fff" /><Text style={st.saveTxt}>Save CV</Text></>
+            : <><Ionicons name="save-outline" size={16} color="#1d4ed8" /><Text style={st.saveTxt}>Save CV</Text></>
           }
         </TouchableOpacity>
 
@@ -1033,8 +1033,8 @@ const st = StyleSheet.create({
   selectedRoleText: { flex: 1, fontSize: 13, fontWeight: '700' },
   changeRoleBtn:    { fontSize: 12, color: C.primary, fontWeight: '700', textDecorationLine: 'underline' },
   disabilityNote: { fontSize: 11, color: C.textSub, marginTop: 6, fontStyle: 'italic', lineHeight: 16 },
-  saveBtn:      { backgroundColor: C.primary, borderRadius: 12, padding: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 },
-  saveTxt:      { color: '#fff', fontSize: 15, fontWeight: '700' },
+  saveBtn:      { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#93c5fd', borderRadius: 10, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, alignSelf: 'flex-start', paddingHorizontal: 28 },
+  saveTxt:      { color: '#1d4ed8', fontSize: 14, fontWeight: '700' },
 });
 
 const sec = StyleSheet.create({

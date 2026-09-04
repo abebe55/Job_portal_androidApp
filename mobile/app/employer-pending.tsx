@@ -1,10 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { C } from '../constants/theme';
 import { useEffect, useRef, useState } from 'react';
 import { getProfile } from '../services/api';
+import WebLayout from '../components/WebLayout';
 
 export default function EmployerPendingScreen() {
   const { user, logout, refreshUser } = useAuth();
@@ -41,19 +42,22 @@ export default function EmployerPendingScreen() {
   };
 
   return (
+    <WebLayout title="Account Under Review" subtitle="Your employer account is being verified">
     <View style={s.page}>
-      {/* Top bar */}
-      <View style={s.topBar}>
-        <TouchableOpacity style={s.backBtn} onPress={handleLogout}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-        <View style={s.logoBox}>
-          <Ionicons name="briefcase" size={22} color="#7c3aed" />
+      {/* Show top bar only on mobile */}
+      {Platform.OS !== 'web' && (
+        <View style={s.topBar}>
+          <TouchableOpacity style={s.backBtn} onPress={handleLogout}>
+            <Ionicons name="arrow-back" size={20} color="#fff" />
+          </TouchableOpacity>
+          <View style={s.logoBox}>
+            <Ionicons name="briefcase" size={22} color={C.primary} />
+          </View>
+          <Text style={s.topBarTitle}>JobPortal</Text>
         </View>
-        <Text style={s.topBarTitle}>JobPortal</Text>
-      </View>
+      )}
 
-      <View style={s.content}>
+      <ScrollView contentContainerStyle={[s.content, Platform.OS === 'web' && { maxWidth: 600, alignSelf: 'center', width: '100%' }]}>
         {/* Icon */}
         <View style={s.iconWrap}>
           <Ionicons name="time-outline" size={56} color="#d97706" />
@@ -102,8 +106,9 @@ export default function EmployerPendingScreen() {
           <Ionicons name="log-out-outline" size={18} color={C.danger} />
           <Text style={s.logoutText}>Sign Out</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
+    </WebLayout>
   );
 }
 
@@ -114,7 +119,7 @@ const s = StyleSheet.create({
   logoBox:    { width: 36, height: 36, borderRadius: 10, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
   topBarTitle:{ fontSize: 18, fontWeight: '800', color: '#fff' },
 
-  content:    { flex: 1, padding: 24, alignItems: 'center' },
+  content:    { padding: 24, alignItems: 'center', paddingBottom: 40 },
   iconWrap:   { width: 100, height: 100, borderRadius: 50, backgroundColor: '#fef3c7', justifyContent: 'center', alignItems: 'center', marginTop: 32, marginBottom: 20, borderWidth: 3, borderColor: '#fcd34d' },
   title:      { fontSize: 22, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 12 },
   sub:        { fontSize: 14, color: C.textSub, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
@@ -129,8 +134,8 @@ const s = StyleSheet.create({
   infoBox:    { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#dbeafe', borderRadius: 12, padding: 14, marginBottom: 24, borderWidth: 1, borderColor: '#93c5fd', width: '100%' },
   infoText:   { flex: 1, fontSize: 12, color: '#1e40af', lineHeight: 18 },
 
-  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primaryLight, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13, marginBottom: 12, borderWidth: 1, borderColor: C.border },
-  refreshText:{ color: C.primary, fontWeight: '700', fontSize: 15 },
-  logoutBtn:  { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.dangerLight, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13 },
-  logoutText: { color: C.danger, fontWeight: '700', fontSize: 15 },
+  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#93c5fd', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 11, marginBottom: 10 },
+  refreshText:{ color: '#1d4ed8', fontWeight: '700', fontSize: 14 },
+  logoutBtn:  { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#fca5a5', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 11 },
+  logoutText: { color: C.danger, fontWeight: '700', fontSize: 14 },
 });
