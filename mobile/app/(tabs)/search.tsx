@@ -117,8 +117,8 @@ function Field({ icon, placeholder, value, set, submit }: {
 }
 
 const st = StyleSheet.create({
-  /* outer gives 16px left/right margin */
-  outer: { paddingHorizontal: 16, paddingTop: 14 },
+  /* outer gives 20px left/right margin */
+  outer: { paddingHorizontal: 20, paddingTop: 14 },
 
   /* All fields + button in one row on web */
   row:     { flexDirection: 'column', gap: 8, marginBottom: 14 },
@@ -170,7 +170,7 @@ const st = StyleSheet.create({
   },
   btnTxt: { color: '#1d4ed8', fontWeight: '700', fontSize: 13 },
 
-  list:    { paddingHorizontal: 16, paddingBottom: 32 },
+  list:    { paddingHorizontal: 20, paddingBottom: 32 },
   card:    { backgroundColor: C.surface, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   ico:     { width: 36, height: 36, borderRadius: 9, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
@@ -179,6 +179,6 @@ const st = StyleSheet.create({
   metaTxt: { color: C.textSub, fontSize: 11, flex: 1 },
   tag:     { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20, flexShrink: 0 },
   tagTxt:  { fontSize: 10, fontWeight: '700' },
-  empty:   { alignItems: 'center', marginTop: 48, gap: 10, paddingHorizontal: 16 },
+  empty:   { alignItems: 'center', marginTop: 48, gap: 10, paddingHorizontal: 20 },
   emptyTxt:{ color: C.textSub, fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });

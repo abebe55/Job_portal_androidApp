@@ -613,7 +613,7 @@ const s = StyleSheet.create({
   appName:    { fontSize: 24, fontWeight: '800', color: C.primary, marginBottom: 4 },
   tagline:    { fontSize: 14, color: C.textSub, marginBottom: 20 },
 
-  stepHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 },
   backBtn:    { padding: 8, borderRadius: 10, backgroundColor: C.primaryLight },
   stepIndicator: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   stepDot:    { width: 10, height: 10, borderRadius: 5, backgroundColor: C.border },
@@ -624,7 +624,7 @@ const s = StyleSheet.create({
   // Main card — wider on web to accommodate 2-col role cards
   card: {
     backgroundColor: '#fff', borderRadius: 14,
-    marginHorizontal: 16, marginTop: 12, padding: 24,
+    marginHorizontal: 20, marginTop: 12, padding: 24,
     width: Platform.OS === 'web' ? 560 : 'auto',
     maxWidth: '100%',
     borderWidth: 1, borderColor: C.border,

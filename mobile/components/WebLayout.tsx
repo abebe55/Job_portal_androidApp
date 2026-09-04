@@ -290,7 +290,7 @@ const sb = StyleSheet.create({
   brandSub:  { fontSize: 11, color: TEXT_MUTED },
   closeBtn:  { padding: 4, marginLeft: 4 },
 
-  navWrap: { paddingHorizontal: 10, paddingVertical: 10 },
+  navWrap: { paddingHorizontal: 12, paddingVertical: 10 },
   navItem: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 10, paddingVertical: 9,

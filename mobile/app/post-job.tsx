@@ -598,7 +598,7 @@ export default function PostJobScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  scroll:       { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 48 },
+  scroll:       { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 48 },
   infoBanner:   { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#dbeafe', borderRadius: 12, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#bfdbfe' },
   infoText:     { flex: 1, fontSize: 13, color: '#1e40af', lineHeight: 19 },
   errorBox:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fee2e2', borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#fecaca' },

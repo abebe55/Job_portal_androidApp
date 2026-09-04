@@ -334,7 +334,7 @@ export default function JobApplicantsScreen() {
       <FlatList
         data={apps}
         keyExtractor={item => item.id.toString()}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 40 }}
         renderItem={({ item }) => {
           const st = STATUS[item.status] ?? STATUS.pending;
           const isOpen = expanded === item.id;

@@ -413,7 +413,7 @@ export default function MyCVScreen() {
 }
 
 const st = StyleSheet.create({
-  scroll:        { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 48, backgroundColor: '#f3f4f6' },
+  scroll:        { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 48, backgroundColor: '#f3f4f6' },
   empty:         { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle:    { fontSize: 20, fontWeight: '700', color: C.text },
   emptySub:      { fontSize: 15, color: C.textSub, textAlign: 'center' },

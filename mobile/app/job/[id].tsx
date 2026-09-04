@@ -154,7 +154,7 @@ export default function JobDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 40 },
   notFound: { textAlign: 'center', marginTop: 40, color: C.textSub },
   titleCard: {
     backgroundColor: C.white, borderRadius: 14, padding: 20,

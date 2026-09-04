@@ -48,9 +48,9 @@ export const S = {
     minHeight: 0,
   },
 
-  // Standard content padding — same on ALL platforms. WebLayout adds 0 outer padding.
+  // Standard content padding — 20px left/right on ALL platforms
   content: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: 40,
   },

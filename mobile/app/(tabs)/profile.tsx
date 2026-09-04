@@ -128,7 +128,7 @@ function MenuItem({ item, onPress }: { item: { icon: string; label: string; colo
 }
 
 const st = StyleSheet.create({
-  scroll:  { paddingHorizontal: 16, paddingBottom: 24 },
+  scroll:  { paddingHorizontal: 20, paddingBottom: 24 },
 
   topRow:  { flexDirection: 'row', gap: 12, marginBottom: 12, flexWrap: 'wrap' },
   card: {

@@ -172,7 +172,7 @@ export default function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 40 },
   balanceCard: {
     backgroundColor: C.surface,
     borderRadius: 12,

@@ -119,7 +119,7 @@ const s = StyleSheet.create({
   logoBox:    { width: 36, height: 36, borderRadius: 10, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
   topBarTitle:{ fontSize: 18, fontWeight: '800', color: '#fff' },
 
-  content:    { padding: 24, alignItems: 'center', paddingBottom: 40 },
+  content:    { paddingHorizontal: 20, paddingTop: 20, alignItems: 'center', paddingBottom: 40 },
   iconWrap:   { width: 100, height: 100, borderRadius: 50, backgroundColor: '#fef3c7', justifyContent: 'center', alignItems: 'center', marginTop: 32, marginBottom: 20, borderWidth: 3, borderColor: '#fcd34d' },
   title:      { fontSize: 22, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 12 },
   sub:        { fontSize: 14, color: C.textSub, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
