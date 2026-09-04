@@ -28,28 +28,36 @@ export default function SearchScreen() {
     setLoading(false);
   };
 
+  const isWeb = Platform.OS === 'web';
+
   return (
     <WebLayout title="Search Jobs" subtitle="Find your next opportunity">
       <View style={S.page}>
         <PageHeader title="Search Jobs" />
 
-        {/* Filter box */}
+        {/* ── Filter bar ── */}
         <View style={st.outer}>
-          <View style={st.filterBox}>
-            <View style={[st.row, Platform.OS === 'web' && st.rowWeb]}>
-              <Field icon="search-outline"   placeholder="Job title or keyword"        value={query}    set={setQuery}    submit={handleSearch} />
-              <Field icon="location-outline" placeholder="Location (e.g. Addis Ababa)" value={location} set={setLocation} submit={handleSearch} />
-              <Field icon="business-outline" placeholder="Industry (e.g. Technology)"  value={industry} set={setIndustry} submit={handleSearch} />
-            </View>
-            <TouchableOpacity style={st.btn} onPress={handleSearch} disabled={loading}>
+          {/* All inputs + Search button in ONE row on web, stacked on mobile */}
+          <View style={[st.row, isWeb && st.rowWeb]}>
+            <Field icon="search-outline"   placeholder="Job title or keyword"        value={query}    set={setQuery}    submit={handleSearch} />
+            <Field icon="location-outline" placeholder="Location (e.g. Addis Ababa)" value={location} set={setLocation} submit={handleSearch} />
+            <Field icon="business-outline" placeholder="Industry (e.g. Technology)"  value={industry} set={setIndustry} submit={handleSearch} />
+
+            {/* Compact Search button — sits inline on web, full-width below on mobile */}
+            <TouchableOpacity
+              style={[st.btn, !isWeb && st.btnFull]}
+              onPress={handleSearch}
+              disabled={loading}
+            >
               {loading
                 ? <ActivityIndicator color="#1d4ed8" size="small" />
-                : <><Ionicons name="search" size={15} color="#1d4ed8" /><Text style={st.btnTxt}>Search</Text></>
+                : <><Ionicons name="search" size={14} color="#1d4ed8" /><Text style={st.btnTxt}>Search</Text></>
               }
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* ── Results ── */}
         <FlatList
           data={results}
           keyExtractor={i => i.id.toString()}
@@ -60,7 +68,10 @@ export default function SearchScreen() {
                 <View style={st.ico}><Ionicons name="briefcase" size={18} color={C.primary} /></View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={st.title} numberOfLines={1}>{item.title}</Text>
-                  <View style={st.meta}><Ionicons name="location-outline" size={11} color={C.textSub} /><Text style={st.metaTxt} numberOfLines={1}>{item.location} · {item.industry}</Text></View>
+                  <View style={st.metaRow}>
+                    <Ionicons name="location-outline" size={11} color={C.textSub} />
+                    <Text style={st.metaTxt} numberOfLines={1}>{item.location} · {item.industry}</Text>
+                  </View>
                 </View>
                 <View style={[st.tag, { backgroundColor: (JOB_TYPE_COLOR[item.job_type] ?? C.primary) + '18' }]}>
                   <Text style={[st.tagTxt, { color: JOB_TYPE_COLOR[item.job_type] ?? C.primary }]}>{item.job_type}</Text>
@@ -80,35 +91,94 @@ export default function SearchScreen() {
   );
 }
 
-function Field({ icon, placeholder, value, set, submit }: { icon: string; placeholder: string; value: string; set: (v: string) => void; submit?: () => void }) {
+function Field({ icon, placeholder, value, set, submit }: {
+  icon: string; placeholder: string; value: string;
+  set: (v: string) => void; submit?: () => void;
+}) {
   return (
     <View style={st.field}>
-      <Ionicons name={icon as any} size={15} color={C.textSub} style={{ marginRight: 6 }} />
-      <TextInput style={st.fieldInput} placeholder={placeholder} value={value} onChangeText={set}
-        onSubmitEditing={submit} placeholderTextColor={C.textSub} returnKeyType="search" />
-      {value ? <TouchableOpacity onPress={() => set('')}><Ionicons name="close-circle" size={14} color={C.textMuted} /></TouchableOpacity> : null}
+      <Ionicons name={icon as any} size={14} color={C.textSub} style={{ marginRight: 6 }} />
+      <TextInput
+        style={st.fieldInput}
+        placeholder={placeholder}
+        value={value}
+        onChangeText={set}
+        onSubmitEditing={submit}
+        placeholderTextColor={C.textSub}
+        returnKeyType="search"
+      />
+      {value ? (
+        <TouchableOpacity onPress={() => set('')}>
+          <Ionicons name="close-circle" size={13} color={C.textMuted} />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  outer:      { paddingHorizontal: 16, paddingTop: 14 },
-  filterBox:  { backgroundColor: C.surface, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: C.border },
-  row:        { flexDirection: 'column', gap: 8, marginBottom: 10 },
-  rowWeb:     { flexDirection: 'row', gap: 8 },
-  field:      { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.border, minHeight: 42 },
-  fieldInput: { flex: 1, paddingVertical: 10, fontSize: 13, color: C.text },
-  btn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#93c5fd', borderRadius: 8, paddingVertical: 11 },
-  btnTxt:     { color: '#1d4ed8', fontWeight: '700', fontSize: 13 },
-  list:       { paddingHorizontal: 16, paddingBottom: 32 },
-  card:       { backgroundColor: C.surface, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
-  cardRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  ico:        { width: 36, height: 36, borderRadius: 9, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  title:      { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 2 },
-  meta:       { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metaTxt:    { color: C.textSub, fontSize: 11, flex: 1 },
-  tag:        { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20, flexShrink: 0 },
-  tagTxt:     { fontSize: 10, fontWeight: '700' },
-  empty:      { alignItems: 'center', marginTop: 48, gap: 10, paddingHorizontal: 16 },
-  emptyTxt:   { color: C.textSub, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  /* outer gives 16px left/right margin */
+  outer: { paddingHorizontal: 16, paddingTop: 14 },
+
+  /* All fields + button in one row on web */
+  row:     { flexDirection: 'column', gap: 8, marginBottom: 14 },
+  rowWeb:  {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: C.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 8,
+    marginBottom: 14,
+  },
+
+  /* Single input field */
+  field: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.bg,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    minHeight: 40,
+  },
+  fieldInput: {
+    flex: 1,
+    paddingVertical: 9,
+    fontSize: 13,
+    color: C.text,
+    outlineStyle: 'none' as any,   // ← removes blue browser outline
+  },
+
+  /* Compact Search button — no full width on web */
+  btn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: '#fff',
+    borderWidth: 1.5, borderColor: '#93c5fd',
+    borderRadius: 8,
+    paddingHorizontal: 16, paddingVertical: 9,
+    flexShrink: 0,
+  },
+  /* Full-width only on mobile */
+  btnFull: {
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  btnTxt: { color: '#1d4ed8', fontWeight: '700', fontSize: 13 },
+
+  list:    { paddingHorizontal: 16, paddingBottom: 32 },
+  card:    { backgroundColor: C.surface, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  ico:     { width: 36, height: 36, borderRadius: 9, backgroundColor: C.primaryLight, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  title:   { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  metaTxt: { color: C.textSub, fontSize: 11, flex: 1 },
+  tag:     { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20, flexShrink: 0 },
+  tagTxt:  { fontSize: 10, fontWeight: '700' },
+  empty:   { alignItems: 'center', marginTop: 48, gap: 10, paddingHorizontal: 16 },
+  emptyTxt:{ color: C.textSub, fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });

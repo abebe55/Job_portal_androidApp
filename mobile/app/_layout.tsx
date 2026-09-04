@@ -3,9 +3,31 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { Platform } from 'react-native';
 import '../i18n';
 
 SplashScreen.preventAutoHideAsync();
+
+// ── Inject global web CSS — removes browser blue outline on all inputs ────────
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    *, *:focus, *:active {
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+    input, textarea, select {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none !important;
+      box-shadow: none !important;
+      border-color: #c4b5fd !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function AuthGuard() {
   const { user, loading } = useAuth();

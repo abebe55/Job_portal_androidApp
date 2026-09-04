@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   errorText:  { flex: 1, color: C.danger, fontSize: 13, fontWeight: '500' },
   inputWrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: 10, borderWidth: 1, borderColor: C.border, marginBottom: 12, paddingHorizontal: 14, width: '100%' },
   inputIcon:  { marginRight: 10 },
-  input:      { flex: 1, paddingVertical: 13, fontSize: 15, color: C.text },
+  input:      { flex: 1, paddingVertical: 13, fontSize: 15, color: C.text, outlineStyle: 'none' as any },
   eyeBtn:     { padding: 4 },
   btn:        { backgroundColor: C.primary, borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 4, width: '100%' },
   btnDisabled:{ opacity: 0.6 },
