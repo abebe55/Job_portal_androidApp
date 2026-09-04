@@ -339,7 +339,7 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={s.scrollCenter} keyboardShouldPersistTaps="handled">
           <View style={s.card}>
             <View style={s.logoWrap}>
-              <Ionicons name="briefcase" size={32} color={C.primary} />
+              <Ionicons name="briefcase" size={28} color={C.primary} />
             </View>
             <Text style={s.appName}>JobPortal</Text>
             <Text style={s.tagline}>Create your account</Text>
@@ -347,48 +347,59 @@ export default function RegisterScreen() {
             <Text style={s.cardTitle}>I want to join as</Text>
             <Text style={s.cardSub}>Choose your account type to get started</Text>
 
-            <TouchableOpacity style={[s.roleCard, role === 'jobseeker' && s.roleCardActive]}
-              onPress={() => setRole('jobseeker')}>
-              <View style={[s.roleIconBox, { background: '#ede9fe' } as any]}>
-                <Ionicons name="search-outline" size={26} color="#7c3aed" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.roleCardTitle, role === 'jobseeker' && { color: C.primary }]}>Job Seeker</Text>
-                <Text style={s.roleCardDesc}>Find jobs, build your CV, apply to positions</Text>
-              </View>
-              {role === 'jobseeker' && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
-            </TouchableOpacity>
+            {/* 2-col role cards on web, single col on mobile */}
+            <View style={s.roleGrid}>
+              <TouchableOpacity
+                style={[s.roleCard, role === 'jobseeker' && s.roleCardActive]}
+                onPress={() => setRole('jobseeker')}
+                activeOpacity={0.8}
+              >
+                <View style={[s.roleIconBox, { backgroundColor: '#ede9fe' }]}>
+                  <Ionicons name="search-outline" size={24} color="#7c3aed" />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.roleCardTitle, role === 'jobseeker' && { color: C.primary }]}>Job Seeker</Text>
+                  <Text style={s.roleCardDesc} numberOfLines={2}>Find jobs, build your CV, apply to positions</Text>
+                </View>
+                {role === 'jobseeker' && <Ionicons name="checkmark-circle" size={20} color={C.primary} />}
+              </TouchableOpacity>
 
-            <TouchableOpacity style={[s.roleCard, role === 'employer' && s.roleCardActive]}
-              onPress={() => setRole('employer')}>
-              <View style={[s.roleIconBox, { background: '#dbeafe' } as any]}>
-                <Ionicons name="business-outline" size={26} color="#2563eb" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.roleCardTitle, role === 'employer' && { color: '#2563eb' }]}>Employer</Text>
-                <Text style={s.roleCardDesc}>Post jobs, find talent, manage applications</Text>
-              </View>
-              {role === 'employer' && <Ionicons name="checkmark-circle" size={22} color="#2563eb" />}
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.roleCard, role === 'employer' && s.roleCardActive]}
+                onPress={() => setRole('employer')}
+                activeOpacity={0.8}
+              >
+                <View style={[s.roleIconBox, { backgroundColor: '#dbeafe' }]}>
+                  <Ionicons name="business-outline" size={24} color="#2563eb" />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.roleCardTitle, role === 'employer' && { color: '#2563eb' }]}>Employer</Text>
+                  <Text style={s.roleCardDesc} numberOfLines={2}>Post jobs, find talent, manage applications</Text>
+                </View>
+                {role === 'employer' && <Ionicons name="checkmark-circle" size={20} color="#2563eb" />}
+              </TouchableOpacity>
+            </View>
 
             {role === 'employer' && (
               <View style={s.empNotice}>
-                <Ionicons name="information-circle-outline" size={16} color="#2563eb" />
+                <Ionicons name="information-circle-outline" size={15} color="#2563eb" />
                 <Text style={s.empNoticeText}>
                   Employers must submit verification documents. Your account will be reviewed and activated within 24–48 hours.
                 </Text>
               </View>
             )}
 
-            <TouchableOpacity style={s.btn} onPress={() => setStep('basic')}>
-              <Text style={s.btnText}>Continue</Text>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={s.linkRow} onPress={() => router.back()}>
-              <Text style={s.linkText}>Already have an account? </Text>
-              <Text style={s.linkBold}>Sign In</Text>
-            </TouchableOpacity>
+            {/* Compact Continue button — not full width */}
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+              <TouchableOpacity style={s.linkRow} onPress={() => router.back()}>
+                <Text style={s.linkText}>Already have an account? </Text>
+                <Text style={s.linkBold}>Sign In</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.btnCompact} onPress={() => setStep('basic')}>
+                <Text style={s.btnText}>Continue</Text>
+                <Ionicons name="arrow-forward" size={16} color="#1d4ed8" />
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -610,11 +621,11 @@ const s = StyleSheet.create({
   stepDotDone:   { backgroundColor: C.success },
   stepLine:   { width: 20, height: 2, backgroundColor: C.border },
 
-  // Main card — wider on web
+  // Main card — wider on web to accommodate 2-col role cards
   card: {
     backgroundColor: '#fff', borderRadius: 14,
     marginHorizontal: 16, marginTop: 12, padding: 24,
-    width: Platform.OS === 'web' ? Math.min(640, 900) : 'auto',
+    width: Platform.OS === 'web' ? 560 : 'auto',
     maxWidth: '100%',
     borderWidth: 1, borderColor: C.border,
   },
@@ -637,12 +648,16 @@ const s = StyleSheet.create({
   linkText:   { color: C.textSub, fontSize: 14 },
   linkBold:   { color: C.primary, fontSize: 14, fontWeight: '700' },
 
-  // Role selection cards
-  roleCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 14, borderWidth: 2, borderColor: C.border, backgroundColor: C.bg, marginBottom: 12 },
+  // Role selection — 2-col grid on web, single col on mobile
+  roleGrid:       { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: 10, marginBottom: 12 },
+  roleCard:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg, minWidth: Platform.OS === 'web' ? 200 : 'auto' },
   roleCardActive: { borderColor: C.primary, backgroundColor: C.primaryLight },
-  roleIconBox:    { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  roleCardTitle:  { fontSize: 15, fontWeight: '800', color: C.text, marginBottom: 2 },
-  roleCardDesc:   { fontSize: 12, color: C.textSub, lineHeight: 17 },
+  roleIconBox:    { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  roleCardTitle:  { fontSize: 14, fontWeight: '800', color: C.text, marginBottom: 2 },
+  roleCardDesc:   { fontSize: 11, color: C.textSub, lineHeight: 16 },
+
+  // Compact button — auto width, sits inline
+  btnCompact: { backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#93c5fd', borderRadius: 9, paddingHorizontal: 18, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   empNotice:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#dbeafe', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#93c5fd' },
   empNoticeText:  { flex: 1, fontSize: 12, color: '#1e40af', lineHeight: 18 },
