@@ -32,8 +32,8 @@ function StatCard({
 const sc: Record<string, React.CSSProperties> = {
   cardTop: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' },
   trend: { fontSize: 12, fontWeight: 600, marginTop: 4 },
-  value: { fontSize: 28, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: '-0.03em' },
-  label: { fontSize: 13, color: 'var(--text-sub)', fontWeight: 500 },
+  value: { fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: '-0.02em' },
+  label: { fontSize: 12, color: 'var(--text-sub)', fontWeight: 500 },
 };
 
 /* ─── Section card wrapper ────────────────────────────────── */

@@ -238,7 +238,9 @@ export default function UsersPage() {
                           <div style={p.avatar}>{u.username?.[0]?.toUpperCase() ?? '?'}</div>
                           <div>
                             <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{u.username}</div>
-                            <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>ID #{u.id}</div>
+                            <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>
+                              {u.id != null ? `ID #${u.id}` : '—'}
+                            </div>
                           </div>
                         </div>
                       </td>
