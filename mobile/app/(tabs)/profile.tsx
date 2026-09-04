@@ -150,7 +150,7 @@ const st = StyleSheet.create({
   chipOrange: { backgroundColor: '#fffbeb', borderColor: '#fde68a' },
   chipTxt:    { fontSize: 12, fontWeight: '600' },
 
-  twoCol: { flexDirection: 'row', gap: 12, marginBottom: 12, flexWrap: 'wrap' },
+  twoCol: { flexDirection: 'row', gap: 12, marginBottom: 12, flexWrap: 'wrap', alignItems: 'stretch' },
   sectionLbl: { fontSize: 10, fontWeight: '800', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 },
 
   langRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'center' },
@@ -161,11 +161,13 @@ const st = StyleSheet.create({
   menuIcon:   { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   menuLbl:    { flex: 1, fontSize: 13, color: C.text, fontWeight: '500' },
 
-  // White background + red text + border — no heavy fill
+  // White background + red text + border — compact, NOT full-width
   signOutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#fca5a5',
-    borderRadius: 10, paddingVertical: 11,
+    borderRadius: 8, paddingVertical: 9, paddingHorizontal: 24,
+    alignSelf: 'flex-start',   // compact — only as wide as content
+    marginTop: 4,
   },
-  signOutTxt: { color: C.danger, fontWeight: '700', fontSize: 14 },
+  signOutTxt: { color: C.danger, fontWeight: '700', fontSize: 13 },
 });

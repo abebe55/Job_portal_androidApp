@@ -419,9 +419,24 @@ const st = StyleSheet.create({
   emptySub:      { fontSize: 15, color: C.textSub, textAlign: 'center' },
   buildBtn:      { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13, marginTop: 8 },
   buildBtnTxt:   { color: '#fff', fontWeight: '700', fontSize: 15 },
-  hero:          { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
-  avatar:        { width: 72, height: 72, borderRadius: 36, borderWidth: 2.5, borderColor: C.primary },
-  avatarBox:     { width: 72, height: 72, borderRadius: 36, backgroundColor: C.bg, borderWidth: 2, borderColor: C.border, justifyContent: 'center', alignItems: 'center' },
+  hero:          { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: C.border },
+  avatar:        { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: C.primary },
+  avatarBox:     { width: 56, height: 56, borderRadius: 28, backgroundColor: C.bg, borderWidth: 2, borderColor: C.border, justifyContent: 'center', alignItems: 'center' },
+  heroName:      { fontSize: 16, fontWeight: '800', color: C.text, marginBottom: 2 },
+  heroRole:      { fontSize: 13, color: C.primary, fontWeight: '600', marginBottom: 3 },
+  heroMeta:      { fontSize: 12, color: C.textSub, marginBottom: 1 },
+  editBtn:       { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#93c5fd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  editBtnTxt:    { color: '#1d4ed8', fontWeight: '700', fontSize: 12 },
+  progCard:      { backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: C.border },
+  progLabel:     { fontSize: 13, fontWeight: '700', color: C.text },
+  progPct:       { fontSize: 14, fontWeight: '800' },
+  progBar:       { height: 6, backgroundColor: C.bg, borderRadius: 3, overflow: 'hidden', marginBottom: 5 },
+  progFill:      { height: 6, borderRadius: 3 },
+  progHint:      { fontSize: 12, color: C.textSub, marginTop: 1 },
+  // 3-column grid on web, 2-col on mobile — replaces old twoCol
+  twoCol:        { flexDirection: 'row', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' },
+  summaryBox:    { backgroundColor: '#f9fafb', borderRadius: 8, padding: 10, marginTop: 8 },
+  summaryLabel:  { fontSize: 11, fontWeight: '700', color: C.textSub, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 },
   heroName:      { fontSize: 18, fontWeight: '800', color: C.text, marginBottom: 2 },
   heroRole:      { fontSize: 14, color: C.primary, fontWeight: '600', marginBottom: 4 },
   heroMeta:      { fontSize: 13, color: C.textSub, marginBottom: 2 },
@@ -466,23 +481,24 @@ const st = StyleSheet.create({
   updateBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#93c5fd',
-    borderRadius: 10, paddingVertical: 12, marginTop: 10,
+    borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24,
+    marginTop: 10, alignSelf: 'flex-start',   // compact width, not full-width
   },
-  updateBtnTxt: { color: '#1d4ed8', fontSize: 14, fontWeight: '700' },
+  updateBtnTxt: { color: '#1d4ed8', fontSize: 13, fontWeight: '700' },
 });
 
-// Full-width section card — no border, shadow only
+// Full-width section card
 const sc = StyleSheet.create({
-  wrap:  { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
-  head:  { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
-  title: { fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  wrap:  { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  head:  { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 10 },
+  title: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
 });
 
-// Half-width section card — no border, shadow only
+// Half-width section card
 const hsc = StyleSheet.create({
-  wrap:  { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
-  head:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  title: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
+  wrap:  { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border, minWidth: 140 },
+  head:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  title: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
 });
 
 // Field: label above, value below

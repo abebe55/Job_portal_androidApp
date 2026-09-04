@@ -44,6 +44,8 @@ export const S = {
   page: {
     flex: 1,
     backgroundColor: '#f8f9fc',
+    // On web: allow content to grow beyond viewport so scroll works
+    minHeight: 0,
   },
 
   // Standard content padding — same on ALL platforms. WebLayout adds 0 outer padding.

@@ -385,12 +385,14 @@ const wl = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     minWidth: 0,
+    // overflow:auto here enables the whole right panel to scroll
     overflow: 'auto' as any,
-    minHeight: '100vh' as any,
+    height: '100vh' as any,
   },
 
   content: {
-    flex: 1,
-    padding: 0,   // NO padding from wrapper — each screen owns its own padding
+    padding: 0,
+    // flex:unset — grow naturally, don't cap to viewport height
+    flexGrow: 1,
   },
 });
