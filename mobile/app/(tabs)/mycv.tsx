@@ -34,7 +34,7 @@ function Toast({ visible, type, message }: { visible: boolean; type: 'success'|'
 // Full-width section card
 function Sec({ title, icon, color = C.primary, children }: any) {
   return (
-    <View style={[sc.wrap, { borderTopColor: color }]}>
+    <View style={sc.wrap}>
       <View style={sc.head}>
         <Ionicons name={icon} size={15} color={color} />
         <Text style={[sc.title, { color }]}>{title}</Text>
@@ -47,7 +47,7 @@ function Sec({ title, icon, color = C.primary, children }: any) {
 // Half-width section card (for 2-col layout)
 function HalfSec({ title, icon, color = C.primary, children }: any) {
   return (
-    <View style={[hsc.wrap, { borderTopColor: color }]}>
+    <View style={hsc.wrap}>
       <View style={hsc.head}>
         <Ionicons name={icon} size={13} color={color} />
         <Text style={[hsc.title, { color }]}>{title}</Text>

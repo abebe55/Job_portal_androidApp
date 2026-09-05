@@ -75,11 +75,11 @@ function EmployerHome() {
         {/* Stats row */}
         <View style={st.statsRow}>
           {[
-            { label: t('published'),  value: published,       color: '#10b981', bg: '#f0fdf4' },
-            { label: t('pending'),    value: pending,         color: '#f59e0b', bg: '#fffbeb' },
-            { label: t('applicants'), value: totalApplicants, color: '#6c63ff', bg: '#f0eeff' },
+            { label: t('published'),  value: published,       color: '#10b981' },
+            { label: t('pending'),    value: pending,         color: '#f59e0b' },
+            { label: t('applicants'), value: totalApplicants, color: '#6c63ff' },
           ].map(sc => (
-            <View key={sc.label} style={[st.statCard, { borderTopColor: sc.color }]}>
+            <View key={sc.label} style={st.statCard}>
               <Text style={[st.statNum, { color: sc.color }]}>{loading ? '—' : sc.value}</Text>
               <Text style={st.statLabel}>{sc.label}</Text>
             </View>
@@ -297,7 +297,6 @@ const st = StyleSheet.create({
   statCard: {
     flex: 1, backgroundColor: C.surface, borderRadius: 10,
     padding: 12, alignItems: 'center',
-    borderTopWidth: 2,
     borderWidth: 1, borderColor: C.border,
   },
   statNum:   { fontSize: 20, fontWeight: '800', marginBottom: 3 },

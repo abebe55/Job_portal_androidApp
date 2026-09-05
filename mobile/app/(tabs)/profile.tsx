@@ -91,15 +91,17 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* Menu */}
+          {/* Menu — employer shows employer items only, jobseeker shows common items only */}
           <View style={[st.card, { flex: 2 }]}>
             <Text style={st.sectionLbl}>{t('menu')}</Text>
-            {user?.role === 'employer' && employerItems.map(item => (
-              <MenuItem key={item.path} item={item} onPress={() => router.push(item.path as any)} />
-            ))}
-            {commonItems.map(item => (
-              <MenuItem key={item.path} item={item} onPress={() => router.push(item.path as any)} />
-            ))}
+            {user?.role === 'employer'
+              ? employerItems.map(item => (
+                  <MenuItem key={item.path} item={item} onPress={() => router.push(item.path as any)} />
+                ))
+              : commonItems.map(item => (
+                  <MenuItem key={item.path} item={item} onPress={() => router.push(item.path as any)} />
+                ))
+            }
           </View>
         </View>
 

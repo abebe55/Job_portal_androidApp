@@ -629,19 +629,28 @@ const s = StyleSheet.create({
   modalItemTxt: { fontSize: 14, color: C.text, fontWeight: '500' },
   modalItemActiveTxt: { color: C.primary, fontWeight: '700' },
 
-  // Job type / work mode cards — outline style, no fill
+  // Job type / work mode cards — outline style, no fill on active
   chipGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   typeCard:     { flex: 1, minWidth: '45%', flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: C.border, backgroundColor: '#fff' },
-  typeCardActive: { backgroundColor: '#f0eeff', borderColor: C.primary },
-  typeCardTxt:  { fontSize: 12, fontWeight: '600', color: C.textSub },
-  typeCardTxtActive: { color: C.primary, fontWeight: '700' },
+  typeCardActive: { borderColor: C.primary, backgroundColor: '#fff' },
+  typeCardTxt:  { fontSize: 12, fontWeight: '500', color: C.textSub },
+  typeCardTxtActive: { color: C.primary, fontWeight: '600' },
 
   // Skill level cards
   levelRow:     { flexDirection: 'row', gap: 8, marginTop: 6 },
   levelCard:    { flex: 1, padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: C.border, backgroundColor: '#fff', alignItems: 'center' },
-  levelCardActive: { backgroundColor: '#f0eeff', borderColor: C.primary },
-  levelCardTitle: { fontSize: 12, fontWeight: '700', color: C.text, textAlign: 'center' },
+  levelCardActive: { borderColor: C.primary, backgroundColor: '#fff' },
+  levelCardTitle: { fontSize: 12, fontWeight: '600', color: C.text, textAlign: 'center' },
   levelCardDesc:  { fontSize: 10, color: C.textSub, marginTop: 1, textAlign: 'center' },
+
+  // Experience cards
+  expGrid:          { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6, marginBottom: 4 },
+  expCard:          { width: '30%', minWidth: 90, padding: 10, borderRadius: 8, borderWidth: 1.5, borderColor: C.border, backgroundColor: '#fff', alignItems: 'center', gap: 4, position: 'relative' },
+  expCardActive:    { borderColor: C.primary, backgroundColor: '#fff' },
+  expCardLabel:     { fontSize: 11, fontWeight: '600', color: C.textSub, textAlign: 'center' },
+  expCardLabelActive: { color: C.primary },
+  expCardDesc:      { fontSize: 9, color: C.textSub, textAlign: 'center', lineHeight: 13 },
+  expCardCheck:     { position: 'absolute', top: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: C.primary, justifyContent: 'center', alignItems: 'center' },
 
   // Chips
   chipRow:      { flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' },

@@ -25,6 +25,7 @@ export default function WalletScreen() {
   const [amount, setAmount] = useState('');
   const [paying, setPaying] = useState(false);
   const [chapaUrl, setChapaUrl] = useState<string | null>(null);
+  const [payError, setPayError] = useState('');
 
   const fetchWallet = async () => {
     try { const res = await getWallet(); setWallet(res.data); } catch {}
@@ -35,7 +36,11 @@ export default function WalletScreen() {
 
   const handleTopUp = async () => {
     const amt = parseFloat(amount);
-    if (!amt || amt < 10) return Alert.alert('Error', 'Minimum top-up is ETB 10');
+    setPayError('');
+    if (!amt || amt < 10) {
+      setPayError('Minimum top-up is ETB 10.');
+      return;
+    }
     setPaying(true);
     try {
       const res = await initiateDeposit({
@@ -47,13 +52,17 @@ export default function WalletScreen() {
       const url = res.data.checkout_url;
       if (url) {
         if (Platform.OS === 'web') {
-          (window as any).location.href = url;
+          // Open Chapa in a new tab so user returns to wallet after payment
+          (window as any).open(url, '_blank');
         } else {
           setChapaUrl(url);
         }
+      } else {
+        setPayError('Payment could not be initiated. Please try again.');
       }
     } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.error || 'Payment initiation failed');
+      const msg = e?.response?.data?.error || e?.message || 'Payment initiation failed.';
+      setPayError(msg);
     }
     setPaying(false);
   };
@@ -93,18 +102,29 @@ export default function WalletScreen() {
                 style={styles.amountField}
                 placeholder="Amount (ETB)"
                 value={amount}
-                onChangeText={setAmount}
+                onChangeText={v => { setAmount(v); setPayError(''); }}
                 keyboardType="numeric"
                 placeholderTextColor={C.textSub}
               />
             </View>
             <TouchableOpacity style={styles.payBtn} onPress={handleTopUp} disabled={paying}>
               {paying
-                ? <ActivityIndicator color="#fff" size="small" />
+                ? <ActivityIndicator color="#1d4ed8" size="small" />
                 : <><Ionicons name="card-outline" size={16} color="#1d4ed8" /><Text style={styles.payBtnText}>Pay</Text></>
               }
             </TouchableOpacity>
           </View>
+          {payError ? (
+            <View style={styles.payError}>
+              <Ionicons name="alert-circle-outline" size={13} color={C.danger} />
+              <Text style={styles.payErrorText}>{payError}</Text>
+            </View>
+          ) : null}
+          {Platform.OS === 'web' && (
+            <Text style={styles.payHint}>
+              Clicking Pay opens Chapa in a new tab. Return here after completing payment and refresh to see your updated balance.
+            </Text>
+          )}
           {/* Quick amounts */}
           <View style={styles.quickRow}>
             {[100, 200, 500, 1000].map(v => (
@@ -219,4 +239,7 @@ const styles = StyleSheet.create({
   txDate: { fontSize: 10, color: C.textSub, marginTop: 2 },
   empty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   emptyText: { color: C.textSub, fontSize: 13 },
+  payError: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, padding: 8, backgroundColor: '#fee2e2', borderRadius: 7, borderWidth: 1, borderColor: '#fca5a5' },
+  payErrorText: { flex: 1, fontSize: 12, color: C.danger, fontWeight: '500' },
+  payHint: { fontSize: 11, color: C.textMuted, marginTop: 8, lineHeight: 16 },
 });
