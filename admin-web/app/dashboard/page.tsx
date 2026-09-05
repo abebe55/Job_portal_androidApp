@@ -259,14 +259,14 @@ const p: Record<string, React.CSSProperties> = {
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 12,
-    marginBottom: 18,
+    gap: 10,
+    marginBottom: 12,
   },
 
   twoCol: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: 14,
+    gap: 10,
   },
 
   avatarRow: { display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 },
